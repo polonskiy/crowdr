@@ -12,7 +12,7 @@ trap exit INT
 
 command_build() {
     for c in $list; do
-        docker build -t $c ${opts_build[$c]}
+        docker build -t $c ${opts_build[$c]} || exit
     done
 }
 
