@@ -60,11 +60,11 @@ To avoid that we need to use this order:
 
 `crowdr ip` - shows IP addresses of running containers from current config
 
-`crowdr shell foo` - start bash shell inside **foo** container
+`crowdr shell foo` - start bash shell inside `foo` container
 
-`crowdr exec foo ls` - run **ls** inside **foo** container
+`crowdr exec foo ls` - run `ls` inside `foo` container
 
-`echo 111 | crowdr pipe foo tr 1 2` - pipe data to **tr 1 2** command inside **foo** container
+`echo 111 | crowdr pipe foo tr 1 2` - pipe data to `tr 1 2` command inside `foo` container
 
 ## Configuration
 
@@ -129,7 +129,7 @@ container_name option value
 ### Internal magic
 
 * all container names will silently prefixed with `projectname_`
-* dependencies: if **foo** links to **bar**, then **bar** will started before **foo** and stopped after **foo**
+* dependencies: if `foo` links to `bar`, then `bar` will started before `foo` and stopped after `foo`
 
 ## Not supported (yet)
 
