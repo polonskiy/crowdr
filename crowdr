@@ -1,0 +1,99 @@
+#!/bin/bash
+
+[[ -n "$CROWDR_TRACE" ]] && set -x
+
+declare -A opts_run
+declare -A opts_build
+declare -A opts_global
+deps=()
+list=""
+
+trap exit INT
+
+command_build() {
+    for c in $list; do
+        docker build -t $c ${opts_build[$c]}
+    done
+}
+
+command_run() {
+    docker rm -f $(tac <<< "$list") &>/dev/null
+    for c in $list; do
+        docker run -d --name $c ${opts_run[$c]} $c > /dev/null && echo $c
+    done
+}
+
+command_stop() {
+    docker stop $(tac <<< "$list")
+}
+
+command_ps() {
+    local out="$(docker ps)"
+    local list=""
+    echo "$(head -1 <<< "$out")"
+    list="$(awk -v regex="${opts_global[project]}" '$NF ~ regex' <<< "$out")"
+    [[ -n "$list" ]] && echo "$list"
+}
+
+command_ip() {
+    local ip=""
+    local running=""
+    for c in $list; do
+        running=$(docker inspect --format '{{.State.Running}}' $c)
+        ip=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $c)
+        [[ "$running" == "false" ]] && ip=""
+        printf '%-30s %-30s\n' $c $ip
+    done
+}
+
+command_shell() {
+    local name="$1"
+    docker exec -t ${opts_global[project]}_$name bash
+}
+
+command_exec() {
+    local name="$1"
+    shift
+    docker exec ${opts_global[project]}_$name "$@"
+}
+
+command_pipe() {
+    local name="$1"
+    shift
+    docker exec -i ${opts_global[project]}_$name "$@"
+}
+
+parse_cfg() {
+    local container=""
+    local option=""
+    local value=""
+    local link=""
+    local alias=""
+    while read container option value; do
+        if [[ "$container" == "global" ]]; then
+            opts_global[$option]="$value"
+            continue
+        fi
+        container="${opts_global[project]}_$container"
+        case $option in
+            build)
+                opts_build[$container]=$value
+                continue
+                ;;
+            link)
+                link="${value%%:*}"
+                link="${opts_global[project]}_$link"
+                alias="${value##*:}"
+                deps+=("$container $link")
+                value="$link:$alias"
+                ;;
+        esac
+        opts_run[$container]+=" --$option=$value"
+    done < <(. crowdr.cfg.sh | grep -vP '(^#)|(^$)')
+    list="$(printf '%s\n' "${deps[@]}" | tsort | tac)"
+}
+
+cmd="${1:-run}"
+shift
+parse_cfg
+command_$cmd "$@"

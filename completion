@@ -1,0 +1,30 @@
+#!/bin/bash
+
+__get_conainers() {
+    . crowdr.cfg.sh | grep -vP '(^$)|(^#)|(^global)' | awk '{print $1}' | sort -u
+}
+
+_crowdr() {
+    local cur prev
+    local commands="build run stop ps ip shell exec pipe"
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    case $prev in
+        shell|pipe|exec)
+            COMPREPLY=($(compgen -W "$(__get_conainers)" -- $cur))
+            return 0
+            ;;
+    esac
+    case $cur in
+        shell|pipe|exec)
+            COMPREPLY=($(__get_conainers))
+            ;;
+        *)
+            COMPREPLY=($(compgen -W "$commands" -- $cur))
+            ;;
+    esac
+    return 0
+}
+
+complete -F _crowdr crowdr
