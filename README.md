@@ -133,6 +133,7 @@ container_name option value
 
 ## Not supported (yet)
 
+* partial build/run/stop
 * build --no-cache
 * --volumes-from
 * [external links](https://docs.docker.com/compose/yml/#external_links)
