@@ -19,7 +19,7 @@ command_build() {
 command_run() {
     docker rm -f $(tac <<< "$list") &>/dev/null
     for c in $list; do
-        docker run -d --name $c ${opts_run[$c]} $c > /dev/null && echo $c
+        docker run -d -t --name $c ${opts_run[$c]} $c > /dev/null && echo $c
     done
 }
 
