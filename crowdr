@@ -63,6 +63,11 @@ command_pipe() {
     docker exec -i ${opts_global[project]}_$name "$@"
 }
 
+command_restart() {
+    docker stop $(tac <<< "$list")
+    docker start $list
+}
+
 parse_cfg() {
     local container=""
     local option=""
