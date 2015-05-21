@@ -63,6 +63,8 @@ To avoid that we need to use this order:
 
 `crowdr stop` - stops all containers
 
+`crowdr restart` - stops all containers and starts them again
+
 `crowdr ps` - shows running containers from current config
 
 `crowdr ip` - shows IP addresses of running containers from current config
