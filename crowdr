@@ -54,7 +54,7 @@ command_shell() {
 command_exec() {
     local name="$1"
     shift
-    docker exec ${opts_global[project]}_$name "$@"
+    docker exec -it ${opts_global[project]}_$name "$@"
 }
 
 command_pipe() {
