@@ -64,7 +64,9 @@ command_pipe() {
 }
 
 command_restart() {
+    echo "Stopping..."
     docker stop $(tac <<< "$list")
+    echo "Starting..."
     docker start $list
 }
 
