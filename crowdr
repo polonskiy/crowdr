@@ -83,6 +83,7 @@ parse_cfg() {
             continue
         fi
         container="${opts_global[project]}_$container"
+        deps+=("$container $container")
         case $option in
             build)
                 opts_build[$container]=$value
