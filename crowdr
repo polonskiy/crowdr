@@ -42,7 +42,7 @@ command_ip() {
         running=$(docker inspect --format '{{.State.Running}}' $c)
         ip=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $c)
         [[ "$running" == "false" ]] && ip=""
-        printf '%-30s %-30s\n' $c $ip
+        printf '%-30s %-30s\n' $c "$ip"
     done
 }
 
