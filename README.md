@@ -77,6 +77,8 @@ To avoid that we need to use this order:
 
 `echo 111 | crowdr pipe foo tr 1 2` - pipe data to `tr 1 2` command inside `foo` container
 
+`crowdr stats` - shows stats
+
 ## Configuration
 
 * crowdr sources `crowdr.cfg.sh` and read stdout

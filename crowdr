@@ -31,6 +31,10 @@ command_stop() {
     docker stop $(tac <<< "$list")
 }
 
+command_stats() {
+    docker stats $list
+}
+
 command_ps() {
     local out="$(docker ps)"
     local list=""

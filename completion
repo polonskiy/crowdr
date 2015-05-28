@@ -6,7 +6,7 @@ __get_conainers() {
 
 _crowdr() {
     local cur prev
-    local commands="build run stop ps ip shell exec pipe restart start"
+    local commands="build run stop ps ip shell exec pipe restart start stats"
     COMPREPLY=()
     cur=${COMP_WORDS[COMP_CWORD]}
     prev=${COMP_WORDS[COMP_CWORD-1]}
