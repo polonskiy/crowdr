@@ -5,6 +5,7 @@
 declare -A opts_run
 declare -A opts_build
 declare -A opts_global
+declare -A opts_image
 deps=()
 list=""
 
@@ -19,7 +20,9 @@ command_build() {
 command_run() {
     docker rm -f $(tac <<< "$list") &>/dev/null
     for c in $list; do
-        docker run -d -t --name $c ${opts_run[$c]} $c > /dev/null && echo $c
+        image=$c
+        [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
+        docker run -d -t --name $c ${opts_run[$c]} "$image" > /dev/null && echo $c
     done
 }
 
@@ -94,6 +97,10 @@ parse_cfg() {
         container="${opts_global[project]}_$container"
         deps+=("$container $container")
         case $option in
+            image)
+                opts_image[$container]=$value
+                continue
+                ;;
             build)
                 opts_build[$container]=$value
                 continue
