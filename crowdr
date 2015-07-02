@@ -1,6 +1,7 @@
 #!/bin/bash
 
 [[ -n "$CROWDR_TRACE" ]] && set -x
+CROWDR_CFG=${CROWDR_CFG:-crowdr.cfg.sh}
 
 declare -A opts_run
 declare -A opts_build
@@ -119,7 +120,7 @@ parse_cfg() {
                 ;;
         esac
         opts_run[$container]+=" --$option=$value"
-    done < <(. crowdr.cfg.sh | grep -vP '(^#)|(^$)')
+    done < <(. $CROWDR_CFG | grep -vP '(^#)|(^$)')
     list="$(printf '%s\n' "${deps[@]}" | tsort | tac)"
 }
 
