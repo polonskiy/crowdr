@@ -122,12 +122,30 @@ Currently only `project` option is supported.
 global project myproject
 ```
 
-### Build options
+If it is not set current directory name used.
+
+### Build option
 
 `build` - path to a directory containing a Dockerfile
 
 ```
-container build some/path
+container_name build some/path
+```
+
+### Image option
+
+`image` - image name. If image doesn't exists docker will try to download it.
+
+```
+container_name image ubuntu:14.04
+```
+
+### Command option
+
+`command` - overrides `CMD` from Dockerfile/image
+
+```
+container_name command tail -f /dev/null
 ```
 
 ### Run options
@@ -150,4 +168,3 @@ container_name option value
 * build --no-cache
 * --volumes-from
 * [external links](https://docs.docker.com/compose/yml/#external_links)
-* [images support](https://docs.docker.com/compose/yml/#image)
