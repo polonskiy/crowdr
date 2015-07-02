@@ -84,6 +84,8 @@ To avoid that we need to use this order:
 * crowdr sources `crowdr.cfg.sh` and read stdout
 * blank lines are ignored
 * lines starting with `#` are ignored.
+* you can override config filename using `CROWDR_CFG` variable
+* you can enable debug mode using `CROWDR_TRACE` variable
 
 Sample `crowdr.cfg.sh`:
 ```bash
