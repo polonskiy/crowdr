@@ -85,6 +85,7 @@ parse_cfg() {
     local value=""
     local link=""
     local alias=""
+    opts_global[project]=$(basename $PWD)
     while read container option value; do
         if [[ "$container" == "global" ]]; then
             opts_global[$option]="$value"
