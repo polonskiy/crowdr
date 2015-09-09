@@ -39,7 +39,7 @@ $ docker-compose up -d
 Recreating test_server_1...
 Recreating test_client_1...
 ```
-As you can see, server recreated first. It means that client will lost connection.
+As you can see, server recreated first. It means that client will loose the connection.
 
 To avoid that we need to use this order:
 
