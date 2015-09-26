@@ -12,6 +12,7 @@ Crowdr is a tool for managing multiple Docker containers.
 * lack of variables
 * options support is always behind actual docker version
 * `up` restarts containers in wrong order
+* hasslefree replacement for non x86/x86_64 architectures
 
 ### What is wrong with `docker-compose up`?
 
