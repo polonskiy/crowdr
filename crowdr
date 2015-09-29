@@ -26,6 +26,7 @@ command_run() {
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
         docker run -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
     done
+    [[ -x crowdr.on.firstrun.sh ]] && ./crowdr.on.firstrun.sh
 }
 
 command_start() {
