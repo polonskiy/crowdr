@@ -2,7 +2,8 @@
 
 [[ -n "$CROWDR_TRACE" ]] && set -x
 CROWDR_CFG=${CROWDR_CFG:-crowdr.cfg.sh}
-
+CROWDR_DIR="$(dirname CROWDR_CFG)"
+CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
 declare -A opts_run
 declare -A opts_build
 declare -A opts_global
@@ -127,4 +128,6 @@ parse_cfg() {
 cmd="${1:-run}"
 shift
 parse_cfg
+[[ -x $CROWDR_HOOKDIR/$cmd.before ]] && $CROWDR_HOOKDIR/$cmd.before
 command_$cmd "$@"
+[[ -x $CROWDR_HOOKDIR/$cmd.after ]] && $CROWDR_HOOKDIR/$cmd.after
