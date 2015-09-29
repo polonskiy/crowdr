@@ -166,9 +166,9 @@ Every crowdr command can be extended.
 Lets say you want to pull in some Dockerfiles from remote repositories *before* running `crowdr build`.
 
     $ mkdir hooks
-    $ echo 'pulling repos' > hooks/before.build
-    $ echo 'git clone http://github.com/someuser/docker.redis' > hooks/before.build 
-    $ echo 'git clone http://github.com/someuser/docker.proxy' >> hooks/before.build
+    $ echo 'pulling repos' > hooks/build.before
+    $ echo 'git clone http://github.com/someuser/docker.redis' > hooks/build.before 
+    $ echo 'git clone http://github.com/someuser/docker.proxy' >> hooks/build.before
     $ chmod 755 hooks/*
     $ crowdr build
     pulling repos
