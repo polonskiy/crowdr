@@ -160,6 +160,21 @@ container_name option value
 
 [Full reference](https://docs.docker.com/reference/commandline/cli/#run)
 
+### Hooks
+
+Every crowdr command can be extended.
+Lets say you want to pull in some Dockerfiles from remote repositories *before* running `crowdr build`.
+
+    $ mkdir hooks
+    $ echo 'pulling repos' > hooks/before.build
+    $ echo 'git clone http://github.com/someuser/docker.redis' > hooks/before.build 
+    $ echo 'git clone http://github.com/someuser/docker.proxy' >> hooks/before.build
+    $ chmod 755 hooks/*
+    $ crowdr build
+    pulling repos
+    
+> Crowdr detects both 'before.' and 'after.'-hooks of each crowdr command.
+
 ### Internal magic
 
 * all container names will silently prefixed with `projectname_`
