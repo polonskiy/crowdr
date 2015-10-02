@@ -131,3 +131,4 @@ parse_cfg
 [[ -x $CROWDR_HOOKDIR/$cmd.before ]] && $CROWDR_HOOKDIR/$cmd.before
 command_$cmd "$@"
 [[ -x $CROWDR_HOOKDIR/$cmd.after ]] && $CROWDR_HOOKDIR/$cmd.after
+exit 0
