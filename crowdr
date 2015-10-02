@@ -1,6 +1,7 @@
 #!/bin/bash
 
-[[ -n "$CROWDR_TRACE" ]] && set -x
+[[ -n "$CROWDR_TRACE" || -n "$CROWDR_DRY" ]] && set -x
+[[ -n "$CROWDR_DRY"   ]] && { alias docker='echo docker'; shopt -s expand_aliases; HOOKEXEC=cat;} || HOOKEXEC=source
 CROWDR_CFG=${CROWDR_CFG:-crowdr.cfg.sh}
 CROWDR_DIR="$(dirname CROWDR_CFG)"
 CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
@@ -128,6 +129,6 @@ parse_cfg() {
 cmd="${1:-run}"
 shift
 parse_cfg
-[[ -x $CROWDR_HOOKDIR/$cmd.before ]] && $CROWDR_HOOKDIR/$cmd.before
+[[ -x $CROWDR_HOOKDIR/$cmd.before ]] && $HOOKEXEC $CROWDR_HOOKDIR/$cmd.before
 command_$cmd "$@"
-[[ -x $CROWDR_HOOKDIR/$cmd.after ]] && $CROWDR_HOOKDIR/$cmd.after
+[[ -x $CROWDR_HOOKDIR/$cmd.after ]] && $HOOKEXEC $CROWDR_HOOKDIR/$cmd.after
