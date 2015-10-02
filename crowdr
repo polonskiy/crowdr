@@ -2,7 +2,7 @@
 
 [[ -n "$CROWDR_TRACE" ]] && set -x
 CROWDR_CFG=${CROWDR_CFG:-crowdr.cfg.sh}
-CROWDR_DIR="$(dirname CROWDR_CFG)"
+CROWDR_DIR="$(dirname $CROWDR_CFG)"
 CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
 declare -A opts_run
 declare -A opts_build
