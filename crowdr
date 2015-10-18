@@ -94,6 +94,23 @@ command_restart() {
     $DOCKER_BIN start $list
 }
 
+command_kill() {
+    $DOCKER_BIN kill $(tac <<< "$list")
+}
+
+command_rm() {
+    $DOCKER_BIN rm $(tac <<< "$list")
+}
+
+command_rmi() {
+    local image=""
+    for c in $list; do
+        image=$c
+        [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
+        $DOCKER_BIN rmi "${image}"
+    done
+}
+
 parse_cfg() {
     local container=""
     local option=""

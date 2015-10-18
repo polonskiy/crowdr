@@ -68,6 +68,12 @@ To avoid that we need to use this order:
 
 `crowdr restart` - stops all containers and starts them again
 
+`crowdr kill` - kills all containers
+
+`crowdr rm` - removes all stopped containers from current config
+
+`crowdr rmi` - removes all not otherwise used images contained in current config
+
 `crowdr ps` - shows running containers from current config
 
 `crowdr ip` - shows IP addresses of running containers from current config
