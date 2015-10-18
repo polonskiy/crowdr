@@ -92,6 +92,24 @@ command_restart() {
     $DOCKER_BIN start $list
 }
 
+command_kill() {
+    $DOCKER_BIN kill $(tac <<< "$list")
+}
+
+command_rm() {
+    $DOCKER_BIN rm $(tac <<< "$list")
+}
+
+command_rmi() {
+  for c in $list; do
+      image=$c
+      [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
+      { error=$($DOCKER_BIN rmi "${image}" 2>&1 1>/dev/null); } \
+        && echo "$c: deleted ${image}" \
+        || { echo "$c: not deleted ${image}"; echo "${error}"; }
+  done
+}
+
 parse_cfg() {
     local container=""
     local option=""
