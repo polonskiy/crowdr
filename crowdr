@@ -23,7 +23,7 @@ trap exit INT
 
 command_build() {
     for c in $list; do
-        $DOCKER_BIN build -t $c ${opts_build[$c]} || exit
+	[[ -n "${opts_build[$c]}" ]] && $DOCKER_BIN build -t $c ${opts_build[$c]} || exit
     done
 }
 
