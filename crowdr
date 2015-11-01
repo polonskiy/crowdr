@@ -104,11 +104,15 @@ command_rm() {
 
 command_rmi() {
     local image=""
-    for c in $list; do
+    for c in $(tac <<< "$list"); do
         image=$c
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
         $DOCKER_BIN rmi "${image}"
     done
+}
+
+parse_Dockerfile_FROM() {
+  echo "$( grep -E "FROM\s+" "${1}/Dockerfile" | sed -r "s/^FROM\s+(.+)$/\1/" )";
 }
 
 parse_cfg() {
@@ -136,6 +140,10 @@ parse_cfg() {
                 ;;
             build)
                 opts_build[$container]=$value
+                from="$( parse_Dockerfile_FROM $value )"
+                if [[ "$from" == "${opts_global[project]}"* ]]; then
+                  deps+=("$container $from")
+                fi
                 continue
                 ;;
             link)
