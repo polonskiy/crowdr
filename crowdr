@@ -1,7 +1,7 @@
 #!/bin/bash
 
 [[ -n "$CROWDR_TRACE" || -n "$CROWDR_DRY" ]] && set -x
-CROWDR_CFG=${CROWDR_CFG:-crowdr.cfg.sh}
+CROWDR_CFG=${CROWDR_CFG:-.crowdr/config.sh}
 CROWDR_DIR="$(dirname $CROWDR_CFG)"
 CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
 if [[ -n "$CROWDR_DRY" ]]; then
