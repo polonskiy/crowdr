@@ -1,7 +1,14 @@
 #!/bin/bash
 
 __get_conainers() {
-    . crowdr.cfg.sh | grep -vP '(^$)|(^#)|(^global)' | awk '{print $1}' | sort -u
+    if [[ ! -n "$CROWDR_CFG" ]]; then
+        if [[ -d ".crowdr" ]]; then
+            CROWDR_CFG=".crowdr/config.sh"
+        else
+            CROWDR_CFG="crowdr.cfg.sh"
+        fi
+    fi
+    . $CROWDR_CFG | grep -vP '(^$)|(^#)|(^global)' | awk '{print $1}' | sort -u
 }
 
 _crowdr() {
