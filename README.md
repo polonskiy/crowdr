@@ -88,14 +88,14 @@ To avoid that we need to use this order:
 
 ## Configuration
 
-* crowdr sources `crowdr.cfg.sh` and read stdout
+* crowdr sources `.crowdr/config.sh` and read stdout
 * blank lines are ignored
 * lines starting with `#` are ignored.
 * you can override config filename using `CROWDR_CFG` variable (`CROWDR_CFG=~/foo/bar/baz.sh crowdr`)
 * you can enable debug mode using `CROWDR_TRACE` variable (`CROWDR_TRACE=1 crowdr |& less`)
 * review planned commands without executing them using `CROWDR_DRY` variable (`CROWDR_DRY=1 crowdr |& less`)
 
-Sample `crowdr.cfg.sh`:
+Sample `.crowdr/config.sh`:
 ```bash
 #!/bin/bash
 
@@ -172,11 +172,11 @@ container_name option value
 Every crowdr command can be extended.
 Lets say you want to pull in some Dockerfiles from remote repositories *before* running `crowdr build`.
 
-    $ mkdir hooks
-    $ echo 'echo pulling repos' > hooks/build.before
-    $ echo 'git clone http://github.com/someuser/docker.redis' >> hooks/build.before
-    $ echo 'git clone http://github.com/someuser/docker.proxy' >> hooks/build.before
-    $ chmod 755 hooks/*
+    $ mkdir .crowdr/hooks
+    $ echo 'echo pulling repos' > .crowdr/hooks/build.before
+    $ echo 'git clone http://github.com/someuser/docker.redis' >> .crowdr/hooks/build.before
+    $ echo 'git clone http://github.com/someuser/docker.proxy' >> .crowdr/hooks/build.before
+    $ chmod 755 .crowdr/hooks/*
     $ crowdr build
     pulling repos
 
