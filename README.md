@@ -167,6 +167,26 @@ container_name option value
 
 [Full reference](https://docs.docker.com/reference/commandline/cli/#run)
 
+### `start_wait_sec` option
+
+`start_wait_sec` - instruct crowdr to wait specified number of seconds **after** running or starting container
+
+Example:
+
+```
+container_name start_wait_sec 3
+```
+
+### `stop_delay_sec` option
+
+`stop_delay_sec` - instruct crowdr to wait specified number of seconds **before** stopping container
+
+Example:
+
+```
+container_name stop_delay_sec 2
+```
+
 ### Hooks
 
 Every crowdr command can be extended.
