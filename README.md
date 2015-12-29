@@ -124,17 +124,30 @@ Benefits:
 * bash support :trollface:
 * full `docker run` options support
 
-### Global options
-
-Currently only `project` option is supported.
+### `project` option (global)
 
 ```
 global project myproject
 ```
 
-If it is not set current directory name used.
+Global option for name of project. All container names will be silently prefixed with this name and separator char. If it is not set current directory name used.
 
-### Build option
+### `project_sep` option (global)
+
+```
+global project_sep "_"
+```
+
+Separator string used after project name. If it is not set `_` is used.
+
+For example for following configuration all containers will be prefixed with `myproj-`
+
+```
+global project myproj
+global project_sep "-"
+```
+
+### `build` option
 
 `build` - path to a directory containing a Dockerfile
 
@@ -142,7 +155,7 @@ If it is not set current directory name used.
 container_name build some/path
 ```
 
-### Image option
+### `image` option
 
 `image` - image name. If image doesn't exists docker will try to download it.
 
@@ -150,7 +163,7 @@ container_name build some/path
 container_name image ubuntu:14.04
 ```
 
-### Command option
+### `command` option
 
 `command` - overrides `CMD` from Dockerfile/image
 

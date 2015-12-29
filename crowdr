@@ -84,19 +84,19 @@ command_ip() {
 
 command_shell() {
     local name="$1"
-    $DOCKER_BIN exec -it ${opts_global[project]}_$name bash
+    $DOCKER_BIN exec -it ${opts_global[project]}${opts_global[project_sep]}$name bash
 }
 
 command_exec() {
     local name="$1"
     shift
-    $DOCKER_BIN exec -it ${opts_global[project]}_$name "$@"
+    $DOCKER_BIN exec -it ${opts_global[project]}${opts_global[project_sep]}$name "$@"
 }
 
 command_pipe() {
     local name="$1"
     shift
-    $DOCKER_BIN exec -i ${opts_global[project]}_$name "$@"
+    $DOCKER_BIN exec -i ${opts_global[project]}${opts_global[project_sep]}$name "$@"
 }
 
 command_restart() {
@@ -130,13 +130,14 @@ parse_cfg() {
     local value=""
     local link=""
     local alias=""
+    opts_global[project_sep]="_"
     opts_global[project]=$(basename $PWD)
     while read container option value; do
         if [[ "$container" == "global" ]]; then
             opts_global[$option]="$value"
             continue
         fi
-        container="${opts_global[project]}_$container"
+        container="${opts_global[project]}${opts_global[project_sep]}$container"
         deps+=("$container $container")
         case $option in
             command)
@@ -153,7 +154,7 @@ parse_cfg() {
                 ;;
             link)
                 link="${value%%:*}"
-                link="${opts_global[project]}_$link"
+                link="${opts_global[project]}${opts_global[project_sep]}$link"
                 alias="${value##*:}"
                 deps+=("$container $link")
                 value="$link:$alias"
