@@ -13,15 +13,19 @@ CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
 if [[ -n "$CROWDR_DRY" ]]; then
     DOCKER_BIN='echo docker'
     HOOK_EXEC='cat'
+    SLEEP_BIN='echo sleep'
 else
     DOCKER_BIN=$(command -v docker)
     HOOK_EXEC='source'
+    SLEEP_BIN='sleep'
 fi
 declare -A opts_run
 declare -A opts_build
 declare -A opts_global
 declare -A opts_image
 declare -A opts_command
+declare -A opts_start_wait_sec
+declare -A opts_stop_delay_sec
 deps=()
 list=""
 
@@ -47,16 +51,37 @@ command_run() {
     for c in $list; do
         image=$c
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
-        $DOCKER_BIN run -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
+        $DOCKER_BIN run -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null
+        local status=$?
+        if [[ $status -eq 0 ]]; then
+            echo $c
+            if [[ -n "${opts_start_wait_sec[$c]}" ]]; then
+                echo "Waiting ${opts_start_wait_sec[$c]} seconds for starting $c ..."
+                $SLEEP_BIN ${opts_start_wait_sec[$c]}
+            fi
+        fi
     done
 }
 
 command_start() {
-    $DOCKER_BIN start $list
+    for c in $list; do
+        $DOCKER_BIN start $c
+        local status=$?
+        if [[ $status -eq 0 ]] && [[ -n "${opts_start_wait_sec[$c]}" ]]; then
+            echo "Waiting ${opts_start_wait_sec[$c]} seconds for starting $c ..."
+            $SLEEP_BIN ${opts_start_wait_sec[$c]}
+        fi
+    done
 }
 
 command_stop() {
-    $DOCKER_BIN stop $(tac <<< "$list")
+    for c in $(tac <<< "$list"); do
+        if [[ -n "${opts_stop_delay_sec[$c]}" ]]; then
+            echo "Waiting ${opts_stop_delay_sec[$c]} seconds before stopping $c ..."
+            $SLEEP_BIN ${opts_stop_delay_sec[$c]}
+        fi
+        $DOCKER_BIN stop $c
+    done
 }
 
 command_stats() {
@@ -101,10 +126,10 @@ command_pipe() {
 
 command_restart() {
     echo "Stopping..."
-    $DOCKER_BIN stop $(tac <<< "$list")
+    command_stop
     echo
     echo "Starting..."
-    $DOCKER_BIN start $list
+    command_start
 }
 
 command_kill() {
@@ -152,6 +177,14 @@ parse_cfg() {
                 opts_build[$container]=$value
                 continue
                 ;;
+            start_wait_sec)
+                opts_start_wait_sec[$container]=$value
+                continue
+                ;;
+            stop_delay_sec)
+                opts_stop_delay_sec[$container]=$value
+                continue
+                ;;
             link)
                 link="${value%%:*}"
                 link="${opts_global[project]}${opts_global[project_sep]}$link"
@@ -160,7 +193,9 @@ parse_cfg() {
                 value="$link:$alias"
                 ;;
         esac
-        opts_run[$container]+=" --$option=$value"
+        if [[ "$option" != "start_wait_sec" ]] && [[ "$option" != "stop_delay_sec" ]]; then
+            opts_run[$container]+=" --$option=$value"
+        fi
     done < <(. $CROWDR_CFG | grep -vP '(^#)|(^$)')
     list="$(printf '%s\n' "${deps[@]}" | tsort | tac)"
 }
