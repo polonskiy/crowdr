@@ -36,9 +36,9 @@ run_hook(){
 command_build() {
     for c in $list; do
         if [[ -n "${opts_build[$c]}" ]]; then
-            run_hook $c build.before
+            run_hook $c before.build
             $DOCKER_BIN build -t $c ${opts_build[$c]} || exit
-            run_hook $c build.after
+            run_hook $c after.build
         fi
     done
 }
@@ -53,11 +53,11 @@ command_run() {
         | sed 's|^/||' \
         | xargs --no-run-if-empty docker rm -f > /dev/null
     for c in $list; do
-        run_hook $c run.before
+        run_hook $c before.run
         image=$c
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
         $DOCKER_BIN run -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
-        run_hook $c run.after
+        run_hook $c after.run
     done
 }
 
@@ -85,7 +85,6 @@ command_ip() {
     local ip=""
     local running=""
     for c in $list; do
-        
         running=$($DOCKER_BIN inspect --format '{{.State.Running}}' $c)
         ip=$($DOCKER_BIN inspect --format '{{ .NetworkSettings.IPAddress }}' $c)
         [[ "$running" == "false" ]] && ip=""
@@ -129,11 +128,11 @@ command_rm() {
 command_rmi() {
     local image=""
     for c in $list; do
-        run_hook $c rmi.before
+        run_hook $c before.rmi
         image=$c
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
         $DOCKER_BIN rmi "${image}"
-        run_hook $c rmi.after
+        run_hook $c after.rmi
     done
 }
 
@@ -145,6 +144,7 @@ parse_cfg() {
     local alias=""
     local hook_name=""
     local hook_script=""
+    local names=()
     opts_global[project_sep]="_"
     opts_global[project]=$(basename $PWD)
     while read container option value; do
@@ -173,10 +173,8 @@ parse_cfg() {
                 alias="${value##*:}"
                 value="$link:$alias"
                 ;;
-            hook)
-                hook_name=$(echo "$value"|awk '{print $1}')
-                hook_script=$(echo "$value"|awk '{$1=""; print $0}')
-                opts_hook["$container~$hook_name"]="$hook_script"
+            after.*|before.*)
+                opts_hook["$container~$option"]="$value"
                 continue
                 ;;
         esac
