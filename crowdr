@@ -22,7 +22,6 @@ declare -A opts_build
 declare -A opts_global
 declare -A opts_image
 declare -A opts_command
-deps=()
 list=""
 
 trap exit INT
@@ -138,7 +137,7 @@ parse_cfg() {
             continue
         fi
         container="${opts_global[project]}${opts_global[project_sep]}$container"
-        deps+=("$container $container")
+        names+=("$container")
         case $option in
             command)
                 opts_command[$container]=$value
@@ -156,13 +155,12 @@ parse_cfg() {
                 link="${value%%:*}"
                 link="${opts_global[project]}${opts_global[project_sep]}$link"
                 alias="${value##*:}"
-                deps+=("$container $link")
                 value="$link:$alias"
                 ;;
         esac
         opts_run[$container]+=" --$option=$value"
     done < <(. $CROWDR_CFG | grep -vP '(^#)|(^$)')
-    list="$(printf '%s\n' "${deps[@]}" | tsort | tac)"
+    list="$(printf '%s\n' "${names[@]}" | uniq )"
 }
 
 cmd="${1:-run}"
