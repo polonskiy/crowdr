@@ -184,7 +184,7 @@ parse_cfg() {
         esac
         opts_run[$container]+=" --$option=$value"
     done < <(. $CROWDR_CFG | grep -vP '(^#)|(^$)')
-    list="$(printf '%s\n' "${deps[@]}" | tsort | tac)"
+    list="$(printf '%s\n' "${deps[@]}" | xargs -n1 | uniq )"
 }
 
 cmd="${1:-run}"
