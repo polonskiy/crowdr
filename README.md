@@ -52,11 +52,13 @@ To avoid that we need to use this order:
 ## Installation
 
 ```
-# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.9.0/crowdr > /usr/local/bin/crowdr
-# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.9.0/completion > /etc/bash_completion.d/crowdr
+# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.9.1/crowdr > /usr/local/bin/crowdr
+# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.9.1/completion > /etc/bash_completion.d/crowdr
 ```
 
 ## Crowdr commands
+
+`crowdr version` - prints current crowdr version
 
 `crowdr run` - (default) runs all containers
 

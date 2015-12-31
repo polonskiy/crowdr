@@ -33,6 +33,10 @@ run_hook(){
     [[ -n ${opts_hook["${container}~$hook"]} ]] && ${opts_hook["${container}~$hook"]}
 }
 
+command_version() {
+    echo "0.9.1"
+}
+
 command_build() {
     for c in $list; do
         if [[ -n "${opts_build[$c]}" ]]; then
