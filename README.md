@@ -1,6 +1,6 @@
 # Crowdr
 
-Crowdr is a tool for managing multiple Docker containers.
+Crowdr is a extremely flexible tool for managing multiple Docker containers.
 
 ## Why not bash/make?
 
@@ -52,8 +52,8 @@ To avoid that we need to use this order:
 ## Installation
 
 ```
-# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/master/crowdr > /usr/local/bin/crowdr
-# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/master/completion > /etc/bash_completion.d/crowdr
+# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.9.0/crowdr > /usr/local/bin/crowdr
+# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.9.0/completion > /etc/bash_completion.d/crowdr
 ```
 
 ## Crowdr commands
@@ -94,6 +94,7 @@ To avoid that we need to use this order:
 * you can override config filename using `CROWDR_CFG` variable (`CROWDR_CFG=~/foo/bar/baz.sh crowdr`)
 * you can enable debug mode using `CROWDR_TRACE` variable (`CROWDR_TRACE=1 crowdr |& less`)
 * review planned commands without executing them using `CROWDR_DRY` variable (`CROWDR_DRY=1 crowdr |& less`)
+* containers run in the order as in config, stop in reversed
 
 Sample `.crowdr/config.sh`:
 ```bash
@@ -194,11 +195,6 @@ Lets say you want to pull in some Dockerfiles from remote repositories *before* 
     pulling repos
 
 Crowdr detects both `.before` and `.after`-hooks of each crowdr command.
-
-### Internal magic
-
-* all container names will silently prefixed with `projectname_`
-* dependencies: if `foo` links to `bar`, then `bar` will started before `foo` and stopped after `foo`
 
 ## Not supported (yet)
 
