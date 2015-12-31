@@ -19,13 +19,16 @@ else
 fi
 declare -A opts_run
 declare -A opts_build
-declare -A opts_global
 declare -A opts_image
 declare -A opts_command
 declare -A opts_hook
 list=""
 
 trap exit INT
+
+fullname() {
+    printf $name_format $project $1
+}
 
 run_hook(){
     local container="$1"
@@ -81,7 +84,7 @@ command_ps() {
     local out="$($DOCKER_BIN ps)"
     local list=""
     echo "$(head -1 <<< "$out")"
-    list="$(awk -v regex="${opts_global[project]}" '$NF ~ regex' <<< "$out")"
+    list="$(awk -v regex="$project" '$NF ~ regex' <<< "$out")"
     [[ -n "$list" ]] && echo "$list"
 }
 
@@ -97,20 +100,19 @@ command_ip() {
 }
 
 command_shell() {
-    local name="$1"
-    $DOCKER_BIN exec -it ${opts_global[project]}${opts_global[project_sep]}$name bash
+    $DOCKER_BIN exec -it $(fullname $1) bash
 }
 
 command_exec() {
     local name="$1"
     shift
-    $DOCKER_BIN exec -it ${opts_global[project]}${opts_global[project_sep]}$name "$@"
+    $DOCKER_BIN exec -it $(fullname $name) "$@"
 }
 
 command_pipe() {
     local name="$1"
     shift
-    $DOCKER_BIN exec -i ${opts_global[project]}${opts_global[project_sep]}$name "$@"
+    $DOCKER_BIN exec -i $(fullname $name) "$@"
 }
 
 command_restart() {
@@ -149,14 +151,9 @@ parse_cfg() {
     local hook_name=""
     local hook_script=""
     local names=()
-    opts_global[project_sep]="_"
-    opts_global[project]=$(basename $PWD)
+    source $CROWDR_CFG
     while read container option value; do
-        if [[ "$container" == "global" ]]; then
-            opts_global[$option]="$value"
-            continue
-        fi
-        container="${opts_global[project]}${opts_global[project_sep]}$container"
+        container="$(fullname $container)"
         names+=("$container")
         case $option in
             command)
@@ -173,7 +170,7 @@ parse_cfg() {
                 ;;
             link)
                 link="${value%%:*}"
-                link="${opts_global[project]}${opts_global[project_sep]}$link"
+                link="$(fullname $link)"
                 alias="${value##*:}"
                 value="$link:$alias"
                 ;;
@@ -183,7 +180,7 @@ parse_cfg() {
                 ;;
         esac
         opts_run[$container]+=" --$option=$value"
-    done < <(. $CROWDR_CFG | grep -vP '(^#)|(^$)')
+    done < <(grep -vP '^#|^\S*$' <<< "$config")
     list="$(printf '%s\n' "${names[@]}" | uniq )"
 }
 
