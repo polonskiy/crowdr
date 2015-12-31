@@ -1,12 +1,11 @@
 #!/bin/bash
 
-project="coolvars"
+project="eval"
 name_format="%s-%s"
-
-somevar='hi there!'
 
 config="
 foo image busybox
-foo command sleep 1
+foo command sh -c 'trap \"echo BYE; exit\" TERM; while true; do date; sleep 1; done'
 foo after.run source $CROWDR_DIR/message.sh
 "
+somevar='hi the111re!'

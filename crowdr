@@ -11,11 +11,9 @@ fi
 CROWDR_DIR="$(dirname $CROWDR_CFG)"
 CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
 if [[ -n "$CROWDR_DRY" ]]; then
-    DOCKER_BIN='echo docker'
-    HOOK_EXEC='cat'
+    EVAL='echo'
 else
-    DOCKER_BIN=$(command -v docker)
-    HOOK_EXEC='source'
+    EVAL='eval'
 fi
 declare -A opts_run
 declare -A opts_build
@@ -44,7 +42,7 @@ command_build() {
     for c in $list; do
         if [[ -n "${opts_build[$c]}" ]]; then
             run_hook $c before.build
-            $DOCKER_BIN build -t $c ${opts_build[$c]} || exit
+            $EVAL docker build -t $c ${opts_build[$c]} || exit
             run_hook $c after.build
         fi
     done
@@ -52,7 +50,7 @@ command_build() {
 
 command_run() {
     #delete existent containers
-    $DOCKER_BIN inspect \
+    $EVAL docker inspect \
         --type=container \
         --format='{{.Name}}' \
         $(tac <<< "$list") \
@@ -63,25 +61,25 @@ command_run() {
         run_hook $c before.run
         image=$c
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
-        $DOCKER_BIN run -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
+        $EVAL docker run -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
         run_hook $c after.run
     done
 }
 
 command_start() {
-    $DOCKER_BIN start $list
+    $EVAL docker start $list
 }
 
 command_stop() {
-    $DOCKER_BIN stop $(tac <<< "$list")
+    $EVAL docker stop $(tac <<< "$list")
 }
 
 command_stats() {
-    $DOCKER_BIN stats $list
+    $EVAL docker stats $list
 }
 
 command_ps() {
-    local out="$($DOCKER_BIN ps)"
+    local out="$($EVAL docker ps)"
     local list=""
     echo "$(head -1 <<< "$out")"
     list="$(awk -v regex="$project" '$NF ~ regex' <<< "$out")"
@@ -92,43 +90,43 @@ command_ip() {
     local ip=""
     local running=""
     for c in $list; do
-        running=$($DOCKER_BIN inspect --format '{{.State.Running}}' $c)
-        ip=$($DOCKER_BIN inspect --format '{{ .NetworkSettings.IPAddress }}' $c)
+        running=$($EVAL docker inspect --format '{{.State.Running}}' $c)
+        ip=$($EVAL docker inspect --format '{{ .NetworkSettings.IPAddress }}' $c)
         [[ "$running" == "false" ]] && ip=""
         printf '%-30s %-30s\n' $c "$ip"
     done
 }
 
 command_shell() {
-    $DOCKER_BIN exec -it $(fullname $1) bash
+    $EVAL docker exec -it $(fullname $1) bash
 }
 
 command_exec() {
     local name="$1"
     shift
-    $DOCKER_BIN exec -it $(fullname $name) "$@"
+    $EVAL docker exec -it $(fullname $name) "$@"
 }
 
 command_pipe() {
     local name="$1"
     shift
-    $DOCKER_BIN exec -i $(fullname $name) "$@"
+    $EVAL docker exec -i $(fullname $name) "$@"
 }
 
 command_restart() {
     echo "Stopping..."
-    $DOCKER_BIN stop $(tac <<< "$list")
+    $EVAL docker stop $(tac <<< "$list")
     echo
     echo "Starting..."
-    $DOCKER_BIN start $list
+    $EVAL docker start $list
 }
 
 command_kill() {
-    $DOCKER_BIN kill $(tac <<< "$list")
+    $EVAL docker kill $(tac <<< "$list")
 }
 
 command_rm() {
-    $DOCKER_BIN rm $(tac <<< "$list")
+    $EVAL docker rm $(tac <<< "$list")
 }
 
 command_rmi() {
@@ -137,7 +135,7 @@ command_rmi() {
         run_hook $c before.rmi
         image=$c
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
-        $DOCKER_BIN rmi "${image}"
+        $EVAL docker rmi "${image}"
         run_hook $c after.rmi
     done
 }
@@ -187,7 +185,7 @@ parse_cfg() {
 cmd="${1:-run}"
 shift
 parse_cfg
-[[ -x $CROWDR_HOOKDIR/$cmd.before ]] && $HOOK_EXEC $CROWDR_HOOKDIR/$cmd.before
+[[ -f $CROWDR_HOOKDIR/$cmd.before ]] && source $CROWDR_HOOKDIR/$cmd.before
 command_$cmd "$@"
-[[ -x $CROWDR_HOOKDIR/$cmd.after ]] && $HOOK_EXEC $CROWDR_HOOKDIR/$cmd.after
+[[ -f $CROWDR_HOOKDIR/$cmd.after ]] && source $CROWDR_HOOKDIR/$cmd.after
 exit 0
