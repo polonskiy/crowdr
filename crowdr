@@ -190,7 +190,7 @@ parse_cfg() {
 cmd="${1:-run}"
 shift
 parse_cfg
-[[ -x $CROWDR_HOOKDIR/$cmd.before ]] && $HOOK_EXEC $CROWDR_HOOKDIR/$cmd.before
+[[ -x $CROWDR_HOOKDIR/before.$cmd ]] && $HOOK_EXEC $CROWDR_HOOKDIR/before.$cmd
 command_$cmd "$@"
-[[ -x $CROWDR_HOOKDIR/$cmd.after ]] && $HOOK_EXEC $CROWDR_HOOKDIR/$cmd.after
+[[ -x $CROWDR_HOOKDIR/after.$cmd  ]] && $HOOK_EXEC $CROWDR_HOOKDIR/after.$cmd
 exit 0
