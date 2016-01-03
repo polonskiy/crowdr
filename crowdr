@@ -11,136 +11,136 @@ fi
 CROWDR_DIR="$(dirname $CROWDR_CFG)"
 CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
 if [[ -n "$CROWDR_DRY" ]]; then
-    EVAL='echo'
+    CROWDR_EVAL='echo'
 else
-    EVAL='eval'
+    CROWDR_EVAL='eval'
 fi
-declare -A opts_run
-declare -A opts_build
-declare -A opts_image
-declare -A opts_command
-declare -A opts_hook
-list=""
+declare -A crowdr_opts_run
+declare -A crowdr_opts_build
+declare -A crowdr_opts_image
+declare -A crowdr_opts_command
+declare -A crowdr_opts_hook
+crowdr_list=""
 
 trap exit INT
 
-fullname() {
+crowdr_fullname() {
     printf $name_format $project $1
 }
 
-run_hook(){
+crowdr_run_hook(){
     local container="$1"
     local hook="$2"
-    [[ -n ${opts_hook["${container}~$hook"]} ]] && ${opts_hook["${container}~$hook"]}
+    [[ -n ${crowdr_opts_hook["${container}~$hook"]} ]] && ${crowdr_opts_hook["${container}~$hook"]}
 }
 
-command_version() {
+crowdr_command_version() {
     echo "0.9.1"
 }
 
-command_build() {
-    for c in $list; do
-        if [[ -n "${opts_build[$c]}" ]]; then
-            run_hook $c before.build
-            $EVAL docker build -t $c ${opts_build[$c]} || exit
-            run_hook $c after.build
+crowdr_command_build() {
+    for c in $crowdr_list; do
+        if [[ -n "${crowdr_opts_build[$c]}" ]]; then
+            crowdr_run_hook $c before.build
+            $CROWDR_EVAL docker build -t $c ${crowdr_opts_build[$c]} || exit
+            crowdr_run_hook $c after.build
         fi
     done
 }
 
-command_run() {
+crowdr_command_run() {
     #delete existent containers
-    $EVAL docker inspect \
+    $CROWDR_EVAL docker inspect \
         --type=container \
         --format='{{.Name}}' \
-        $(tac <<< "$list") \
+        $(tac <<< "$crowdr_list") \
         2> /dev/null \
         | sed 's|^/||' \
         | xargs --no-run-if-empty docker rm -f > /dev/null
-    for c in $list; do
-        run_hook $c before.run
+    for c in $crowdr_list; do
+        crowdr_run_hook $c before.run
         image=$c
-        [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
-        $EVAL docker run -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
-        run_hook $c after.run
+        [[ -n "${crowdr_opts_image[$c]}" ]] && image="${crowdr_opts_image[$c]}"
+        $CROWDR_EVAL docker run -d -t --name $c ${crowdr_opts_run[$c]} "$image" ${crowdr_opts_command[$c]} > /dev/null && echo $c
+        crowdr_run_hook $c after.run
     done
 }
 
-command_start() {
-    $EVAL docker start $list
+crowdr_command_start() {
+    $CROWDR_EVAL docker start $crowdr_list
 }
 
-command_stop() {
-    $EVAL docker stop $(tac <<< "$list")
+crowdr_command_stop() {
+    $CROWDR_EVAL docker stop $(tac <<< "$crowdr_list")
 }
 
-command_stats() {
-    $EVAL docker stats $list
+crowdr_command_stats() {
+    $CROWDR_EVAL docker stats $crowdr_list
 }
 
-command_ps() {
-    local out="$($EVAL docker ps)"
+crowdr_command_ps() {
+    local out="$($CROWDR_EVAL docker ps)"
     local list=""
     echo "$(head -1 <<< "$out")"
     list="$(awk -v regex="$project" '$NF ~ regex' <<< "$out")"
     [[ -n "$list" ]] && echo "$list"
 }
 
-command_ip() {
+crowdr_command_ip() {
     local ip=""
     local running=""
-    for c in $list; do
-        running=$($EVAL docker inspect --format '{{.State.Running}}' $c)
-        ip=$($EVAL docker inspect --format '{{ .NetworkSettings.IPAddress }}' $c)
+    for c in $crowdr_list; do
+        running=$($CROWDR_EVAL docker inspect --format '{{.State.Running}}' $c)
+        ip=$($CROWDR_EVAL docker inspect --format '{{ .NetworkSettings.IPAddress }}' $c)
         [[ "$running" == "false" ]] && ip=""
         printf '%-30s %-30s\n' $c "$ip"
     done
 }
 
-command_shell() {
-    $EVAL docker exec -it $(fullname $1) bash
+crowdr_command_shell() {
+    $CROWDR_EVAL docker exec -it $(crowdr_fullname $1) bash
 }
 
-command_exec() {
+crowdr_command_exec() {
     local name="$1"
     shift
-    $EVAL docker exec -it $(fullname $name) "$@"
+    $CROWDR_EVAL docker exec -it $(crowdr_fullname $name) "$@"
 }
 
-command_pipe() {
+crowdr_command_pipe() {
     local name="$1"
     shift
-    $EVAL docker exec -i $(fullname $name) "$@"
+    $CROWDR_EVAL docker exec -i $(crowdr_fullname $name) "$@"
 }
 
-command_restart() {
+crowdr_command_restart() {
     echo "Stopping..."
-    $EVAL docker stop $(tac <<< "$list")
+    $CROWDR_EVAL docker stop $(tac <<< "$crowdr_list")
     echo
     echo "Starting..."
-    $EVAL docker start $list
+    $CROWDR_EVAL docker start $crowdr_list
 }
 
-command_kill() {
-    $EVAL docker kill $(tac <<< "$list")
+crowdr_command_kill() {
+    $CROWDR_EVAL docker kill $(tac <<< "$crowdr_list")
 }
 
-command_rm() {
-    $EVAL docker rm $(tac <<< "$list")
+crowdr_command_rm() {
+    $CROWDR_EVAL docker rm $(tac <<< "$crowdr_list")
 }
 
-command_rmi() {
+crowdr_command_rmi() {
     local image=""
-    for c in $list; do
-        run_hook $c before.rmi
+    for c in $crowdr_list; do
+        crowdr_run_hook $c before.rmi
         image=$c
-        [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
-        $EVAL docker rmi "${image}"
-        run_hook $c after.rmi
+        [[ -n "${crowdr_opts_image[$c]}" ]] && image="${crowdr_opts_image[$c]}"
+        $CROWDR_EVAL docker rmi "${image}"
+        crowdr_run_hook $c after.rmi
     done
 }
 
-parse_cfg() {
+crowdr_parse_cfg() {
     local container=""
     local option=""
     local value=""
@@ -151,41 +151,41 @@ parse_cfg() {
     local names=()
     source $CROWDR_CFG
     while read container option value; do
-        container="$(fullname $container)"
+        container="$(crowdr_fullname $container)"
         names+=("$container")
         case $option in
             command)
-                opts_command[$container]=$value
+                crowdr_opts_command[$container]=$value
                 continue
                 ;;
             image)
-                opts_image[$container]=$value
+                crowdr_opts_image[$container]=$value
                 continue
                 ;;
             build)
-                opts_build[$container]=$value
+                crowdr_opts_build[$container]=$value
                 continue
                 ;;
             link)
                 link="${value%%:*}"
-                link="$(fullname $link)"
+                link="$(crowdr_fullname $link)"
                 alias="${value##*:}"
                 value="$link:$alias"
                 ;;
             after.*|before.*)
-                opts_hook["$container~$option"]="$value"
+                crowdr_opts_hook["$container~$option"]="$value"
                 continue
                 ;;
         esac
-        opts_run[$container]+=" --$option=$value"
+        crowdr_opts_run[$container]+=" --$option=$value"
     done < <(grep -vP '^#|^\S*$' <<< "$config")
-    list="$(printf '%s\n' "${names[@]}" | uniq )"
+    crowdr_list="$(printf '%s\n' "${names[@]}" | uniq )"
 }
 
 cmd="${1:-run}"
 shift
-parse_cfg
+crowdr_parse_cfg
 [[ -f $CROWDR_HOOKDIR/$cmd.before ]] && source $CROWDR_HOOKDIR/$cmd.before
-command_$cmd "$@"
+crowdr_command_$cmd "$@"
 [[ -f $CROWDR_HOOKDIR/$cmd.after ]] && source $CROWDR_HOOKDIR/$cmd.after
 exit 0
