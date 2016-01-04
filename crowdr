@@ -34,7 +34,7 @@ run_hook(){
 }
 
 command_version() {
-    echo "0.9.1"
+    echo "0.10.0"
 }
 
 command_build() {
