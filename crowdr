@@ -128,7 +128,7 @@ command_kill() {
 }
 
 command_rm() {
-    $EVAL docker rm $(tac <<< "$list")
+    $EVAL docker rm "$@" $(tac <<< "$list")
 }
 
 command_rmi() {
