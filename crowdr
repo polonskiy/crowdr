@@ -223,7 +223,9 @@ crowdr_parse_cfg() {
 
 cmd="${1:-run}"
 shift
-crowdr_parse_cfg
+if [[ "$cmd" != "version" ]]; then
+    crowdr_parse_cfg
+fi
 [[ -x $CROWDR_HOOKDIR/before.$cmd ]] && $CROWDR_HOOK_EXEC $CROWDR_HOOKDIR/before.$cmd
 crowdr_command_$cmd "$@"
 [[ -x $CROWDR_HOOKDIR/after.$cmd  ]] && $CROWDR_HOOK_EXEC $CROWDR_HOOKDIR/after.$cmd
