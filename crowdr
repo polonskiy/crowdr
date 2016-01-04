@@ -21,25 +21,13 @@ declare -A crowdr_opts_build
 declare -A crowdr_opts_image
 declare -A crowdr_opts_command
 declare -A crowdr_opts_hook
-declare -A crowdr_names
+declare -A crowdr_full_short
+crowdr_full_ordered=""
 
 trap exit INT
 
 crowdr_fullname() {
     printf $crowdr_name_format $crowdr_project $1
-}
-
-crowdr_get_running_containers() {
-    docker ps \
-        --filter "label=crowdr.project=$crowdr_project" \
-        --format '{{.Names}}'
-}
-
-crowdr_get_all_containers() {
-    docker ps \
-        --all \
-        --filter "label=crowdr.project=$crowdr_project" \
-        --format '{{.Names}}'
 }
 
 crowdr_run_hook(){
@@ -54,7 +42,7 @@ crowdr_command_version() {
 
 crowdr_command_build() {
     local container
-    for container in ${!crowdr_names[@]}; do
+    for container in $crowdr_full_ordered; do
         if [[ -n "${crowdr_opts_build[$container]}" ]]; then
             crowdr_run_hook $container before.build
             $CROWDR_DEBUG docker build -t $container ${crowdr_opts_build[$container]} || exit
@@ -67,13 +55,12 @@ crowdr_command_run() {
     local image
     local container
     crowdr_command_rm --force > /dev/null
-    for container in ${!crowdr_names[@]}; do
+    for container in $crowdr_full_ordered; do
         crowdr_run_hook $container before.run
         image=$container
         [[ -n "${crowdr_opts_image[$container]}" ]] && image="${crowdr_opts_image[$container]}"
         $CROWDR_DEBUG docker run \
             --label crowdr.project=$crowdr_project \
-            --label crowdr.name=${crowdr_names[$container]} \
             --detach \
             --tty \
             --name $container \
@@ -86,7 +73,7 @@ crowdr_command_run() {
 
 crowdr_command_start() {
     local container
-    for container in $(crowdr_get_all_containers); do
+    for container in $crowdr_full_ordered; do
         crowdr_run_hook $container before.start
         $CROWDR_DEBUG docker start $container
         crowdr_run_hook $container after.start
@@ -95,7 +82,7 @@ crowdr_command_start() {
 
 crowdr_command_stop() {
     local container
-    for container in $(crowdr_get_running_containers | tac); do
+    for container in $(tac <<< "$crowdr_full_ordered"); do
         crowdr_run_hook $container before.stop
         $CROWDR_DEBUG docker stop $container
         crowdr_run_hook $container after.stop
@@ -103,7 +90,7 @@ crowdr_command_stop() {
 }
 
 crowdr_command_stats() {
-    $CROWDR_DEBUG docker stats $(crowdr_get_all_containers)
+    $CROWDR_DEBUG docker stats $crowdr_full_ordered
 }
 
 crowdr_command_ps() {
@@ -111,12 +98,9 @@ crowdr_command_ps() {
 }
 
 crowdr_command_ip() {
-    local containers=$(crowdr_get_all_containers)
-    if [[ "$containers" != "" ]]; then
-        $CROWDR_DEBUG docker inspect \
-            --format '{{printf "%-30s %-30s" .Name .NetworkSettings.IPAddress}}' \
-            $containers
-    fi
+    $CROWDR_DEBUG docker inspect \
+        --format '{{printf "%-30s %-30s" .Name .NetworkSettings.IPAddress}}' \
+        $crowdr_full_ordered
 }
 
 crowdr_command_shell() {
@@ -153,7 +137,7 @@ crowdr_command_restart() {
 
 crowdr_command_kill() {
     local container
-    for container in $(crowdr_get_running_containers | tac); do
+    for container in $(tac <<< "$crowdr_full_ordered"); do
         crowdr_run_hook $container before.kill
         $CROWDR_DEBUG docker kill "$@" $container
         crowdr_run_hook $container after.kill
@@ -162,7 +146,7 @@ crowdr_command_kill() {
 
 crowdr_command_rm() {
     local container
-    for container in $(crowdr_get_all_containers | tac); do
+    for container in $(tac <<< "$crowdr_full_ordered"); do
         crowdr_run_hook $container before.rm
         $CROWDR_DEBUG docker rm "$@" $container
         crowdr_run_hook $container after.rm
@@ -172,7 +156,7 @@ crowdr_command_rm() {
 crowdr_command_rmi() {
     local image
     local container
-    for container in ${!crowdr_names[@]}; do
+    for container in $crowdr_full_ordered; do
         crowdr_run_hook $container before.rmi
         image=$container
         [[ -n "${crowdr_opts_image[$container]}" ]] && image="${crowdr_opts_image[$container]}"
@@ -188,22 +172,24 @@ crowdr_parse_cfg() {
     local link
     local alias
     local short_name
+    local full_name
     source $CROWDR_CFG
     while read container option value; do
         short_name=$container
-        container="$(crowdr_fullname $container)"
-        crowdr_names[$container]=$short_name
+        full_name="$(crowdr_fullname $container)"
+        crowdr_full_short[$full_name]=$short_name
+        crowdr_full_ordered+=($full_name)
         case $option in
             command)
-                crowdr_opts_command[$container]=$value
+                crowdr_opts_command[$full_name]=$value
                 continue
                 ;;
             image)
-                crowdr_opts_image[$container]=$value
+                crowdr_opts_image[$full_name]=$value
                 continue
                 ;;
             build)
-                crowdr_opts_build[$container]=$value
+                crowdr_opts_build[$full_name]=$value
                 continue
                 ;;
             link)
@@ -213,12 +199,13 @@ crowdr_parse_cfg() {
                 value="$link:$alias"
                 ;;
             after.*|before.*)
-                crowdr_opts_hook["$container~$option"]="$value"
+                crowdr_opts_hook["$full_name~$option"]="$value"
                 continue
                 ;;
         esac
-        crowdr_opts_run[$container]+=" --$option=$value"
+        crowdr_opts_run[$full_name]+=" --$option=$value"
     done < <(grep -vP '^#|^\S*$' <<< "$crowdr_config")
+    crowdr_full_ordered=$(printf '%s\n' "${crowdr_full_ordered[@]}" | uniq)
 }
 
 cmd="${1:-run}"
