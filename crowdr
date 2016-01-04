@@ -87,14 +87,18 @@ command_run() {
 command_start() {
     local container
     for container in $(get_all_containers); do
+        run_hook $container before.start
         $DEBUG docker start $container
+        run_hook $container after.start
     done
 }
 
 command_stop() {
     local container
     for container in $(get_running_containers | tac); do
+        run_hook $container before.stop
         $DEBUG docker stop $container
+        run_hook $container after.stop
     done
 }
 
@@ -146,14 +150,18 @@ command_restart() {
 command_kill() {
     local container
     for container in $(get_running_containers | tac); do
+        run_hook $container before.kill
         $DEBUG docker kill "$@" $container
+        run_hook $container after.kill
     done
 }
 
 command_rm() {
     local container
     for container in $(get_all_containers | tac); do
+        run_hook $container before.rm
         $DEBUG docker rm "$@" $container
+        run_hook $container after.rm
     done
 }
 
