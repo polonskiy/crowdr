@@ -146,7 +146,12 @@ crowdr_command_kill() {
 
 crowdr_command_rm() {
     local container
-    for container in $(tac <<< "$crowdr_full_ordered"); do
+    local existent=$(docker ps \
+        --all \
+        --filter "label=crowdr.project=$crowdr_project" \
+        --format '{{.Names}}'
+    )
+    for container in $existent; do
         crowdr_run_hook $container before.rm
         $CROWDR_DEBUG docker rm "$@" $container
         crowdr_run_hook $container after.rm
