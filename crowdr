@@ -51,19 +51,15 @@ command_build() {
 }
 
 command_run() {
-    #delete existent containers
-    $EVAL docker inspect \
-        --type=container \
-        --format='{{.Name}}' \
-        $(tac <<< "$list") \
-        2> /dev/null \
-        | sed 's|^/||' \
-        | xargs --no-run-if-empty docker rm -f > /dev/null
+    $EVAL docker ps --filter "label=crowdr.project=$project" -q -a \
+        | xargs --no-run-if-empty $EVAL docker rm -f > /dev/null
     for c in $list; do
         run_hook $c before.run
         image=$c
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
-        $EVAL docker run -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
+        $EVAL docker run \
+            --label crowdr.project=$project \
+            -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
         run_hook $c after.run
     done
 }
@@ -81,22 +77,13 @@ command_stats() {
 }
 
 command_ps() {
-    local out="$($EVAL docker ps)"
-    local list=""
-    echo "$(head -1 <<< "$out")"
-    list="$(awk -v regex="$project" '$NF ~ regex' <<< "$out")"
-    [[ -n "$list" ]] && echo "$list"
+    $EVAL docker ps --filter="label=crowdr.project=$project"
 }
 
 command_ip() {
-    local ip=""
-    local running=""
-    for c in $list; do
-        running=$($EVAL docker inspect --format '{{.State.Running}}' $c)
-        ip=$($EVAL docker inspect --format '{{ .NetworkSettings.IPAddress }}' $c)
-        [[ "$running" == "false" ]] && ip=""
-        printf '%-30s %-30s\n' $c "$ip"
-    done
+    $EVAL docker ps --filter "label=crowdr.project=$project" -q \
+        | xargs --no-run-if-empty $EVAL docker \
+        inspect --format '{{printf "%-30s %-30s" .Name .NetworkSettings.IPAddress}}'
 }
 
 command_shell() {
