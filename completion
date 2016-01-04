@@ -50,4 +50,4 @@ _crowdr() {
     return 0
 }
 
-complete -F _crowdr crowdr
+complete -F _crowdr crowdr ./crowdr
