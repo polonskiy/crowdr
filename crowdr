@@ -11,10 +11,9 @@ fi
 CROWDR_DIR="$(dirname $CROWDR_CFG)"
 CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
 if [[ -n "$CROWDR_DRY" ]]; then
-    EVAL='echo'
+    DEBUG='echo'
     HOOK_EXEC='cat'
 else
-    EVAL='eval'
     HOOK_EXEC='source'
 fi
 declare -A opts_run
@@ -22,12 +21,25 @@ declare -A opts_build
 declare -A opts_image
 declare -A opts_command
 declare -A opts_hook
-list=""
+config_containers=""
 
 trap exit INT
 
 fullname() {
     printf $name_format $project $1
+}
+
+get_running_containers() {
+    docker ps \
+        --filter "label=crowdr.project=$project" \
+        --format '{{.Names}}'
+}
+
+get_all_containers() {
+    docker ps \
+        --all \
+        --filter "label=crowdr.project=$project" \
+        --format '{{.Names}}'
 }
 
 run_hook(){
@@ -41,90 +53,115 @@ command_version() {
 }
 
 command_build() {
-    for c in $list; do
+    for c in $config_containers; do
         if [[ -n "${opts_build[$c]}" ]]; then
             run_hook $c before.build
-            $EVAL docker build -t $c ${opts_build[$c]} || exit
+            $DEBUG docker build -t $c ${opts_build[$c]} || exit
             run_hook $c after.build
         fi
     done
 }
 
 command_run() {
-    $EVAL docker ps --filter "label=crowdr.project=$project" -q -a \
-        | xargs --no-run-if-empty $EVAL docker rm -f > /dev/null
-    for c in $list; do
-        run_hook $c before.run
-        image=$c
-        [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
-        $EVAL docker run \
+    local image
+    local container
+    command_rm --force > /dev/null
+    for container in $config_containers; do
+        run_hook $container before.run
+        image=$container
+        [[ -n "${opts_image[$container]}" ]] && image="${opts_image[$container]}"
+        $DEBUG docker run \
             --label crowdr.project=$project \
-            -d -t --name $c ${opts_run[$c]} "$image" ${opts_command[$c]} > /dev/null && echo $c
-        run_hook $c after.run
+            --detach \
+            --tty \
+            --name $container \
+            ${opts_run[$container]} \
+            "$image" \
+            ${opts_command[$container]} > /dev/null && echo $container
+        run_hook $container after.run
     done
 }
 
 command_start() {
-    $EVAL docker start $list
+    local container
+    for container in $(get_all_containers); do
+        $DEBUG docker start $container
+    done
 }
 
 command_stop() {
-    $EVAL docker stop $(tac <<< "$list")
+    local container
+    for container in $(get_running_containers | tac); do
+        $DEBUG docker stop $container
+    done
 }
 
 command_stats() {
-    $EVAL docker stats $list
+    $DEBUG docker stats $(get_all_containers)
 }
 
 command_ps() {
-    $EVAL docker ps --filter="label=crowdr.project=$project"
+    $DEBUG docker ps --filter="label=crowdr.project=$project" "$@"
 }
 
 command_ip() {
-    $EVAL docker ps --filter "label=crowdr.project=$project" -q \
-        | xargs --no-run-if-empty $EVAL docker \
-        inspect --format '{{printf "%-30s %-30s" .Name .NetworkSettings.IPAddress}}'
+    local containers=$(get_all_containers)
+    if [[ "$containers" != "" ]]; then
+        $DEBUG docker inspect \
+            --format '{{printf "%-30s %-30s" .Name .NetworkSettings.IPAddress}}' \
+            $containers
+    fi
 }
 
 command_shell() {
-    $EVAL docker exec -it $(fullname $1) bash
+    $DEBUG docker exec \
+        --interactive \
+        --tty \
+        $1 bash
 }
 
 command_exec() {
-    local name="$1"
-    shift
-    $EVAL docker exec -it $(fullname $name) "$@"
+    $DEBUG docker exec \
+        --interactive \
+        --tty \
+        "$@"
 }
 
 command_pipe() {
-    local name="$1"
-    shift
-    $EVAL docker exec -i $(fullname $name) "$@"
+    $DEBUG docker exec \
+        --interactive \
+        "$@"
 }
 
 command_restart() {
     echo "Stopping..."
-    $EVAL docker stop $(tac <<< "$list")
+    command_stop
     echo
     echo "Starting..."
-    $EVAL docker start $list
+    command_start
 }
 
 command_kill() {
-    $EVAL docker kill $(tac <<< "$list")
+    local container
+    for container in $(get_running_containers | tac); do
+        $DEBUG docker kill "$@" $container
+    done
 }
 
 command_rm() {
-    $EVAL docker rm "$@" $(tac <<< "$list")
+    local container
+    for container in $(get_all_containers | tac); do
+        $DEBUG docker rm "$@" $container
+    done
 }
 
 command_rmi() {
     local image=""
-    for c in $list; do
+    for c in $config_containers; do
         run_hook $c before.rmi
         image=$c
         [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
-        $EVAL docker rmi "${image}"
+        $DEBUG docker rmi "${image}"
         run_hook $c after.rmi
     done
 }
@@ -168,7 +205,7 @@ parse_cfg() {
         esac
         opts_run[$container]+=" --$option=$value"
     done < <(grep -vP '^#|^\S*$' <<< "$config")
-    list="$(printf '%s\n' "${names[@]}" | uniq )"
+    config_containers="$(printf '%s\n' "${names[@]}" | uniq )"
 }
 
 cmd="${1:-run}"

@@ -1,14 +1,7 @@
 #!/bin/bash
 
 __get_conainers() {
-    if [[ ! -n "$CROWDR_CFG" ]]; then
-        if [[ -d ".crowdr" ]]; then
-            CROWDR_CFG=".crowdr/config.sh"
-        else
-            CROWDR_CFG="crowdr.cfg.sh"
-        fi
-    fi
-    . $CROWDR_CFG | grep -vP '(^$)|(^#)|(^global)' | awk '{print $1}' | sort -u
+    $1 ps --format '{{.Names}}'
 }
 
 _crowdr() {
@@ -35,13 +28,13 @@ _crowdr() {
     prev=${COMP_WORDS[COMP_CWORD-1]}
     case $prev in
         shell|pipe|exec)
-            COMPREPLY=($(compgen -W "$(__get_conainers)" -- $cur))
+            COMPREPLY=($(compgen -W "$(__get_conainers $1)" -- $cur))
             return 0
             ;;
     esac
     case $cur in
         shell|pipe|exec)
-            COMPREPLY=($(__get_conainers))
+            COMPREPLY=($(__get_conainers $1))
             ;;
         *)
             COMPREPLY=($(compgen -W "${commands[*]}" -- $cur))
