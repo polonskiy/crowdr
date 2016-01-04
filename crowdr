@@ -21,7 +21,7 @@ declare -A opts_build
 declare -A opts_image
 declare -A opts_command
 declare -A opts_hook
-config_containers=""
+declare -A names
 
 trap exit INT
 
@@ -53,11 +53,12 @@ command_version() {
 }
 
 command_build() {
-    for c in $config_containers; do
-        if [[ -n "${opts_build[$c]}" ]]; then
-            run_hook $c before.build
-            $DEBUG docker build -t $c ${opts_build[$c]} || exit
-            run_hook $c after.build
+    local container
+    for container in ${!names[@]}; do
+        if [[ -n "${opts_build[$container]}" ]]; then
+            run_hook $container before.build
+            $DEBUG docker build -t $container ${opts_build[$container]} || exit
+            run_hook $container after.build
         fi
     done
 }
@@ -66,12 +67,13 @@ command_run() {
     local image
     local container
     command_rm --force > /dev/null
-    for container in $config_containers; do
+    for container in ${!names[@]}; do
         run_hook $container before.run
         image=$container
         [[ -n "${opts_image[$container]}" ]] && image="${opts_image[$container]}"
         $DEBUG docker run \
             --label crowdr.project=$project \
+            --label crowdr.name=${names[$container]} \
             --detach \
             --tty \
             --name $container \
@@ -156,29 +158,31 @@ command_rm() {
 }
 
 command_rmi() {
-    local image=""
-    for c in $config_containers; do
-        run_hook $c before.rmi
-        image=$c
-        [[ -n "${opts_image[$c]}" ]] && image="${opts_image[$c]}"
+    local image
+    local container
+    for container in ${!names[@]}; do
+        run_hook $container before.rmi
+        image=$container
+        [[ -n "${opts_image[$container]}" ]] && image="${opts_image[$container]}"
         $DEBUG docker rmi "${image}"
-        run_hook $c after.rmi
+        run_hook $container after.rmi
     done
 }
 
 parse_cfg() {
-    local container=""
-    local option=""
-    local value=""
-    local link=""
-    local alias=""
-    local hook_name=""
-    local hook_script=""
-    local names=()
+    local container
+    local option
+    local value
+    local link
+    local alias
+    local hook_name
+    local hook_script
+    local short_name
     source $CROWDR_CFG
     while read container option value; do
+        short_name=$container
         container="$(fullname $container)"
-        names+=("$container")
+        names[$container]=$short_name
         case $option in
             command)
                 opts_command[$container]=$value
@@ -205,7 +209,6 @@ parse_cfg() {
         esac
         opts_run[$container]+=" --$option=$value"
     done < <(grep -vP '^#|^\S*$' <<< "$config")
-    config_containers="$(printf '%s\n' "${names[@]}" | uniq )"
 }
 
 cmd="${1:-run}"

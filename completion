@@ -1,7 +1,7 @@
 #!/bin/bash
 
 __get_conainers() {
-    $1 ps --format '{{.Names}}'
+    $1 ps --format '{{.Label "crowdr.name"}}'
 }
 
 _crowdr() {
