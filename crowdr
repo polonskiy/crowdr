@@ -123,20 +123,24 @@ crowdr_command_shell() {
     $CROWDR_DEBUG docker exec \
         --interactive \
         --tty \
-        $1 bash
+        $(crowdr_fullname $1) bash
 }
 
 crowdr_command_exec() {
+    local name=$(crowdr_fullname $1)
+    shift
     $CROWDR_DEBUG docker exec \
         --interactive \
         --tty \
-        "$@"
+        $name "$@"
 }
 
 crowdr_command_pipe() {
+    local name=$(crowdr_fullname $1)
+    shift
     $CROWDR_DEBUG docker exec \
         --interactive \
-        "$@"
+        $name "$@"
 }
 
 crowdr_command_restart() {
