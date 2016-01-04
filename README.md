@@ -1,53 +1,6 @@
 # Crowdr
 
-Crowdr is a extremely flexible tool for managing multiple Docker containers.
-
-## Why not bash/make?
-
-* pure bash - too much boilerplate code
-* make - even more boilerplate code :trollface:
-
-## Why not docker-compose?
-
-* lack of variables
-* options support is always behind actual docker version
-* `up` restarts containers in wrong order
-* hasslefree replacement for non x86/x86_64 architectures
-
-### What is wrong with `docker-compose up`?
-
-```yaml
-client:
-    image: ubuntu
-    command: sleep infinity
-    links:
-        - server
-
-server:
-    image: ubuntu
-    command: sleep infinity
-```
-
-```bash
-$ docker-compose up -d
-Creating test_server_1...
-Creating test_client_1...
-```
-First start is ok. Server started before a client.
-
-```bash
-$ docker-compose up -d
-Recreating test_server_1...
-Recreating test_client_1...
-```
-As you can see, server recreated first. It means that client will loose the connection.
-
-To avoid that we need to use this order:
-
-* stop client
-* stop server
-* recreate & start server
-* recreate & start client
+Crowdr is a extremely flexible Docker orchestrator
 
 ## Installation
 
@@ -102,26 +55,59 @@ Sample `.crowdr/config.sh`:
 ```bash
 #!/bin/bash
 
-HOST="$(tr -d '-' <<< $HOSTNAME)"
-PREFIX="foo"
+crowdr_project="example"
+crowdr_name_format="%s_%s"
 
-echo "
-global project ${USER}_${HOST}_myproject
+crowdr_config="
+database env DB_NAME=gitlabhq_production
+database env DB_USER=gitlab
+database env DB_PASS=password
+database volume $(crowdr_fullname database):/var/lib/postgresql
+database image sameersbn/postgresql:9.4-11
+database before.run create_volume database
+database after.run wait_port database 5432
 
-mysql build docker/mysql
-mysql hostname $PREFIX-mysql
-mysql volume $PWD/mysql-data:/var/lib/mysql
+redis volume $(crowdr_fullname redis):/var/lib/redis
+redis image sameersbn/redis:latest
+redis before.run create_volume redis
+redis after.run wait_port redis 6379
 
-#comment
-
-apache build docker/apache
-apache hostname $PREFIX-apache
-apache memory 5g
-apache link mysql
-apache volume $PWD:/var/www
-apache env-file config.env
-apache after.run sleep 5s
+gitlab before.run create_volume gitlab
+gitlab after.run wait_gitlab
+gitlab link database:postgresql
+gitlab link redis:redisio
+gitlab publish 10022:22
+gitlab publish 10080:80
+gitlab env GITLAB_PORT=10080
+gitlab env GITLAB_SSH_PORT=10022
+gitlab env GITLAB_SECRETS_DB_KEY_BASE=long-and-random-alpha-numeric-string
+gitlab volume $(crowdr_fullname gitlab):/home/git/data
+gitlab image sameersbn/gitlab:8.3.2
 "
+
+create_volume() {
+    docker volume create --name=$(crowdr_fullname $1) > /dev/null
+}
+
+wait_port() {
+    ip=$(docker inspect --format '{{.NetworkSettings.IPAddress}}' $(crowdr_fullname $1))
+    echo "Waiting for $1"
+    while ! nc -q 1 $ip $2 </dev/null >/dev/null; do
+        echo -n .
+        sleep 1;
+    done
+    echo
+}
+
+wait_gitlab() {
+    echo "Waiting for gitlab"
+    while ! curl -ILs http://localhost:10080 | grep -q '200 OK'; do
+        echo -n .
+        sleep 1;
+    done
+    echo
+    xdg-open http://localhost:10080
+}
 ```
 
 Benefits:
@@ -198,10 +184,3 @@ Lets say you want to pull in some Dockerfiles from remote repositories *before* 
     pulling repos
 
 Crowdr detects both `.before` and `.after`-hooks of each crowdr command.
-
-## Not supported (yet)
-
-* partial build/run/stop
-* build --no-cache
-* --volumes-from
-* [external links](https://docs.docker.com/compose/yml/#external_links)
