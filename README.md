@@ -120,7 +120,7 @@ apache memory 5g
 apache link mysql
 apache volume $PWD:/var/www
 apache env-file config.env
-apache hook after.run sleep 5s
+apache after.run sleep 5s
 "
 ```
 
