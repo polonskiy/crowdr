@@ -52,8 +52,8 @@ To avoid that we need to use this order:
 ## Installation
 
 ```
-# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.9.1/crowdr > /usr/local/bin/crowdr
-# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.9.1/completion > /etc/bash_completion.d/crowdr
+# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.10.0/crowdr > /usr/local/bin/crowdr
+# curl -s https://raw.githubusercontent.com/polonskiy/crowdr/0.10.0/completion > /etc/bash_completion.d/crowdr
 ```
 
 ## Crowdr commands
