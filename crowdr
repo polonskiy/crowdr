@@ -62,6 +62,7 @@ crowdr_command_run() {
     crowdr_command_rm --force > /dev/null
     for container in $crowdr_full_ordered; do
         crowdr_run_hook $container before.run
+        crowdr_run_hook $container before.start
         image=$container
         [[ -n "${crowdr_opts_image[$container]}" ]] && image="${crowdr_opts_image[$container]}"
         $crowdr_debug docker run \
@@ -72,6 +73,7 @@ crowdr_command_run() {
             ${crowdr_opts_run[$container]} \
             "$image" \
             ${crowdr_opts_command[$container]} > /dev/null && echo $container
+        crowdr_run_hook $container after.start
         crowdr_run_hook $container after.run
     done
 }
