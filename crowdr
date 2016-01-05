@@ -8,13 +8,13 @@ if [[ ! -n "$CROWDR_CFG" ]]; then
         CROWDR_CFG="crowdr.cfg.sh"
     fi
 fi
-CROWDR_DIR="$(dirname $CROWDR_CFG)"
-CROWDR_HOOKDIR="$CROWDR_DIR/hooks"
+crowdr_dir="$(dirname $CROWDR_CFG)"
+crowdr_hookdir="$crowdr_dir/hooks"
 if [[ -n "$CROWDR_DRY" ]]; then
-    CROWDR_DEBUG='echo'
-    CROWDR_HOOK_EXEC='cat'
+    crowdr_debug='echo'
+    crowdr_hook_exec='cat'
 else
-    CROWDR_HOOK_EXEC='source'
+    crowdr_hook_exec='source'
 fi
 declare -A crowdr_opts_run
 declare -A crowdr_opts_build
@@ -45,7 +45,7 @@ crowdr_command_build() {
     for container in $crowdr_full_ordered; do
         if [[ -n "${crowdr_opts_build[$container]}" ]]; then
             crowdr_run_hook $container before.build
-            $CROWDR_DEBUG docker build -t $container ${crowdr_opts_build[$container]} || exit
+            $crowdr_debug docker build -t $container ${crowdr_opts_build[$container]} || exit
             crowdr_run_hook $container after.build
         fi
     done
@@ -59,7 +59,7 @@ crowdr_command_run() {
         crowdr_run_hook $container before.run
         image=$container
         [[ -n "${crowdr_opts_image[$container]}" ]] && image="${crowdr_opts_image[$container]}"
-        $CROWDR_DEBUG docker run \
+        $crowdr_debug docker run \
             --label crowdr.project=$crowdr_project \
             --detach \
             --tty \
@@ -75,7 +75,7 @@ crowdr_command_start() {
     local container
     for container in $crowdr_full_ordered; do
         crowdr_run_hook $container before.start
-        $CROWDR_DEBUG docker start $container
+        $crowdr_debug docker start $container
         crowdr_run_hook $container after.start
     done
 }
@@ -84,27 +84,27 @@ crowdr_command_stop() {
     local container
     for container in $(tac <<< "$crowdr_full_ordered"); do
         crowdr_run_hook $container before.stop
-        $CROWDR_DEBUG docker stop $container
+        $crowdr_debug docker stop $container
         crowdr_run_hook $container after.stop
     done
 }
 
 crowdr_command_stats() {
-    $CROWDR_DEBUG docker stats $crowdr_full_ordered
+    $crowdr_debug docker stats $crowdr_full_ordered
 }
 
 crowdr_command_ps() {
-    $CROWDR_DEBUG docker ps --filter="label=crowdr.project=$crowdr_project" "$@"
+    $crowdr_debug docker ps --filter="label=crowdr.project=$crowdr_project" "$@"
 }
 
 crowdr_command_ip() {
-    $CROWDR_DEBUG docker inspect \
+    $crowdr_debug docker inspect \
         --format '{{printf "%-30s %-30s" .Name .NetworkSettings.IPAddress}}' \
         $crowdr_full_ordered
 }
 
 crowdr_command_shell() {
-    $CROWDR_DEBUG docker exec \
+    $crowdr_debug docker exec \
         --interactive \
         --tty \
         $(crowdr_fullname $1) bash
@@ -113,7 +113,7 @@ crowdr_command_shell() {
 crowdr_command_exec() {
     local name=$(crowdr_fullname $1)
     shift
-    $CROWDR_DEBUG docker exec \
+    $crowdr_debug docker exec \
         --interactive \
         --tty \
         $name "$@"
@@ -122,7 +122,7 @@ crowdr_command_exec() {
 crowdr_command_pipe() {
     local name=$(crowdr_fullname $1)
     shift
-    $CROWDR_DEBUG docker exec \
+    $crowdr_debug docker exec \
         --interactive \
         $name "$@"
 }
@@ -139,7 +139,7 @@ crowdr_command_kill() {
     local container
     for container in $(tac <<< "$crowdr_full_ordered"); do
         crowdr_run_hook $container before.kill
-        $CROWDR_DEBUG docker kill "$@" $container
+        $crowdr_debug docker kill "$@" $container
         crowdr_run_hook $container after.kill
     done
 }
@@ -153,7 +153,7 @@ crowdr_command_rm() {
     )
     for container in $existent; do
         crowdr_run_hook $container before.rm
-        $CROWDR_DEBUG docker rm "$@" $container
+        $crowdr_debug docker rm "$@" $container
         crowdr_run_hook $container after.rm
     done
 }
@@ -165,7 +165,7 @@ crowdr_command_rmi() {
         crowdr_run_hook $container before.rmi
         image=$container
         [[ -n "${crowdr_opts_image[$container]}" ]] && image="${crowdr_opts_image[$container]}"
-        $CROWDR_DEBUG docker rmi "${image}"
+        $crowdr_debug docker rmi "${image}"
         crowdr_run_hook $container after.rmi
     done
 }
@@ -218,7 +218,7 @@ shift
 if [[ "$cmd" != "version" ]]; then
     crowdr_parse_cfg
 fi
-[[ -x $CROWDR_HOOKDIR/before.$cmd ]] && $CROWDR_HOOK_EXEC $CROWDR_HOOKDIR/before.$cmd
+[[ -x $crowdr_hookdir/before.$cmd ]] && $crowdr_hook_exec $crowdr_hookdir/before.$cmd
 crowdr_command_$cmd "$@"
-[[ -x $CROWDR_HOOKDIR/after.$cmd  ]] && $CROWDR_HOOK_EXEC $CROWDR_HOOKDIR/after.$cmd
+[[ -x $crowdr_hookdir/after.$cmd  ]] && $crowdr_hook_exec $crowdr_hookdir/after.$cmd
 exit 0
