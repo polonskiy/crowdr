@@ -91,7 +91,7 @@ crowdr_command_stop() {
     local container
     for container in $crowdr_full_reversed; do
         crowdr_run_hook $container before.stop
-        $crowdr_debug docker stop $container
+        $crowdr_debug docker stop "$@" $container
         crowdr_run_hook $container after.stop
     done
 }
