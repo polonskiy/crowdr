@@ -67,6 +67,7 @@ crowdr_command_run() {
         [[ -n "${crowdr_opts_image[$container]}" ]] && image="${crowdr_opts_image[$container]}"
         $crowdr_debug docker run \
             --label crowdr.project=$crowdr_project \
+            --label crowdr.name=${crowdr_full_short[$container]} \
             --detach \
             --tty \
             --name $container \
