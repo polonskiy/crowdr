@@ -171,7 +171,7 @@ crowdr_command_rmi() {
         crowdr_run_hook $container before.rmi
         image=$container
         [[ -n "${crowdr_opts_image[$container]}" ]] && image="${crowdr_opts_image[$container]}"
-        $crowdr_debug docker rmi "${image}"
+        $crowdr_debug docker rmi "$@" "${image}"
         crowdr_run_hook $container after.rmi
     done
 }
