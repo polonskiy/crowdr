@@ -23,8 +23,13 @@ declare -A crowdr_opts_command
 declare -A crowdr_opts_hook
 declare -A crowdr_full_short
 crowdr_full_ordered=""
+crowdr_full_reversed=""
 
 trap exit INT
+
+crowdr_container_exists() {
+    docker inspect --type=container $1 &> /dev/null
+}
 
 crowdr_fullname() {
     printf $crowdr_name_format $crowdr_project $1
@@ -82,7 +87,7 @@ crowdr_command_start() {
 
 crowdr_command_stop() {
     local container
-    for container in $(tac <<< "$crowdr_full_ordered"); do
+    for container in $crowdr_full_reversed; do
         crowdr_run_hook $container before.stop
         $crowdr_debug docker stop $container
         crowdr_run_hook $container after.stop
@@ -137,7 +142,7 @@ crowdr_command_restart() {
 
 crowdr_command_kill() {
     local container
-    for container in $(tac <<< "$crowdr_full_ordered"); do
+    for container in $crowdr_full_reversed; do
         crowdr_run_hook $container before.kill
         $crowdr_debug docker kill "$@" $container
         crowdr_run_hook $container after.kill
@@ -146,12 +151,10 @@ crowdr_command_kill() {
 
 crowdr_command_rm() {
     local container
-    local existent=$(docker ps \
-        --all \
-        --filter "label=crowdr.project=$crowdr_project" \
-        --format '{{.Names}}'
-    )
-    for container in $existent; do
+    for container in $crowdr_full_reversed; do
+        if ! crowdr_container_exists $container; then
+            continue
+        fi
         crowdr_run_hook $container before.rm
         $crowdr_debug docker rm "$@" $container
         crowdr_run_hook $container after.rm
@@ -161,7 +164,7 @@ crowdr_command_rm() {
 crowdr_command_rmi() {
     local image
     local container
-    for container in $crowdr_full_ordered; do
+    for container in $crowdr_full_reversed; do
         crowdr_run_hook $container before.rmi
         image=$container
         [[ -n "${crowdr_opts_image[$container]}" ]] && image="${crowdr_opts_image[$container]}"
@@ -211,6 +214,7 @@ crowdr_parse_cfg() {
         crowdr_opts_run[$full_name]+=" --$option=$value"
     done < <(grep -vP '^#|^\S*$' <<< "$crowdr_config")
     crowdr_full_ordered=$(printf '%s\n' "${crowdr_full_ordered[@]}" | uniq)
+    crowdr_full_reversed=$(tac <<< "$crowdr_full_ordered")
 }
 
 cmd="${1:-run}"
