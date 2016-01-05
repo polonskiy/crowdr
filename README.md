@@ -17,19 +17,19 @@ Crowdr is a extremely flexible Docker orchestrator
 
 `crowdr build` - builds all images
 
-`crowdr stop` - stops all containers
+`crowdr stop` - stops all containers (supports docker options, e.g.: `crowdr stop --time=5`)
 
 `crowdr start` - starts all containers
 
 `crowdr restart` - stops all containers and starts them again
 
-`crowdr kill` - kills all containers
+`crowdr kill` - kills all containers (supports docker options, e.g.: `crowdr kill --signal="KILL"`)
 
-`crowdr rm` - removes all stopped containers from current config
+`crowdr rm` - removes all stopped containers from current config (supports docker options, e.g.: `crowdr rm -f`)
 
-`crowdr rmi` - removes all not otherwise used images contained in current config
+`crowdr rmi` - removes all not otherwise used images contained in current config (supports docker options, e.g.: `crowdr rmi -f`)
 
-`crowdr ps` - shows running containers from current config
+`crowdr ps` - shows running containers from current config (supports docker options, e.g.: `crowdr ps -a -q`)
 
 `crowdr ip` - shows IP addresses of running containers from current config
 
@@ -39,13 +39,12 @@ Crowdr is a extremely flexible Docker orchestrator
 
 `echo 111 | crowdr pipe foo tr 1 2` - pipe data to `tr 1 2` command inside `foo` container
 
-`crowdr stats` - shows stats
+`crowdr stats` - shows stats (supports docker options, e.g.: `crowdr stats --no-stream`)
 
 ## Configuration
 
-* crowdr sources `.crowdr/config.sh` and read stdout
-* blank lines are ignored
-* lines starting with `#` are ignored.
+* crowdr sources `.crowdr/config.sh`
+* blank lines and lines starting with `#` are ignored.
 * you can override config filename using `CROWDR_CFG` variable (`CROWDR_CFG=~/foo/bar/baz.sh crowdr`)
 * you can enable debug mode using `CROWDR_TRACE` variable (`CROWDR_TRACE=1 crowdr |& less`)
 * review planned commands without executing them using `CROWDR_DRY` variable (`CROWDR_DRY=1 crowdr |& less`)
@@ -65,15 +64,15 @@ database env DB_PASS=password
 database volume $(crowdr_fullname database):/var/lib/postgresql
 database image sameersbn/postgresql:9.4-11
 database before.run create_volume database
-database after.run wait_port database 5432
+database after.start wait_port database 5432
 
 redis volume $(crowdr_fullname redis):/var/lib/redis
 redis image sameersbn/redis:latest
 redis before.run create_volume redis
-redis after.run wait_port redis 6379
+redis after.start wait_port redis 6379
 
 gitlab before.run create_volume gitlab
-gitlab after.run wait_gitlab
+gitlab after.start wait_gitlab
 gitlab link database:postgresql
 gitlab link redis:redisio
 gitlab publish 10022:22
