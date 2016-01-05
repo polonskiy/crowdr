@@ -50,7 +50,7 @@ crowdr_command_build() {
     for container in $crowdr_full_ordered; do
         if [[ -n "${crowdr_opts_build[$container]}" ]]; then
             crowdr_run_hook $container before.build
-            $crowdr_debug docker build -t $container ${crowdr_opts_build[$container]} || exit
+            $crowdr_debug docker build -t $container ${crowdr_opts_build[$container]} || exit 1
             crowdr_run_hook $container after.build
         fi
     done
