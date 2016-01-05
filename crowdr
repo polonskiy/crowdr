@@ -97,7 +97,7 @@ crowdr_command_stop() {
 }
 
 crowdr_command_stats() {
-    $crowdr_debug docker stats $crowdr_full_ordered
+    $crowdr_debug docker stats "$@" $crowdr_full_ordered
 }
 
 crowdr_command_ps() {
