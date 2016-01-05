@@ -28,7 +28,7 @@ crowdr_full_reversed=""
 trap exit INT
 
 crowdr_container_exists() {
-    docker inspect --type=container $1 &> /dev/null
+    $crowdr_debug docker inspect --type=container $1 &> /dev/null
 }
 
 crowdr_fullname() {
