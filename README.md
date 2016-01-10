@@ -1,45 +1,148 @@
-# Crowdr
+<p align="center">
+<b><a href="#features">Features</a></b>
+|
+<b><a href="#installation">Installation</a></b>
+|
+<b><a href="#quickstart">Quick-start guide</a></b>
+|
+<b><a href="#configuration">Configuration</a></b>
+</p>
 
-Crowdr is a extremely flexible Docker orchestrator
+<br>
 
-## Installation
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/polonskiy/crowdr/blob/master/LICENSE)
+[![Current Version](https://img.shields.io/badge/version-0.10.1-green.svg)](https://github.com/polonskiy/crowdr)
+
+Extremely flexible tool for managing multiple docker containers.
+
+# Features
+
+- Provide commands which operates on collection of containers.
+- Uses predefined description of containers from readable configuration file.
+- Can use any `docker run` option that is provided by your docker version.
+- The order of starting containers is defined in configuration file.
+- The order of stopping containers is the reverse of the order of starting.
+- Easy to install, it's just bash script.
+- Allow to use bash functions (or external scripts) as container hooks for many crowdr commands.
+
+# Installation
+
+Become root (for example with `sudo -i`) and execute:
 
 ```
 # curl -s https://raw.githubusercontent.com/polonskiy/crowdr/master/crowdr > /usr/local/bin/crowdr
 # curl -s https://raw.githubusercontent.com/polonskiy/crowdr/master/completion > /etc/bash_completion.d/crowdr
 ```
 
-## Crowdr commands
+# Quick-start guide
 
-`crowdr version` - prints current crowdr version
+The following example runs simple but complete [Wordpress](https://wordpress.org/) installation on Docker which contains:
+- user defined network `example01` used by all containers,
+- Docker container for Wordpress MySQL database `example01-wordpress-db`,
+- Docker named volume `example01-wordpress-db` for Wordpress database data,
+- Docker container for Apache server which runs Wordpress web application `example01-wordpress-web`,
+- Docker named volume `example01-wordpress-web` for Wordpress html data.
 
-`crowdr run` - (default) runs all containers
+It uses only official docker containers, so it can be used easily and without fear to play with crowdr.
 
-`crowdr build` - builds all images
+1. Create empty directory and cd into it.
 
-`crowdr stop` - stops all containers (supports docker options, e.g.: `crowdr stop --time=5`)
+2. Create crowdr.cfg.sh file (crowdr configuration file) with following content.
 
-`crowdr start` - starts all containers
+  ```sh
+  #!/bin/bash
 
-`crowdr restart` - stops all containers and starts them again
+  crowdr_project="example01"
+  crowdr_name_format="%s-%s"
 
-`crowdr kill` - kills all containers (supports docker options, e.g.: `crowdr kill --signal="KILL"`)
+  net_name=${crowdr_project}
+  wordpress_db_host=$(crowdr_fullname wordpress-db)
+  mysql_root_password=secret-pass
+  wordpress_db_name=wordpress
+  wordpress_db_user=wordpress
+  wordpress_db_password=secret-pass
+  wordpress_port=8080
 
-`crowdr rm` - removes all stopped containers from current config (supports docker options, e.g.: `crowdr rm -f`)
+  crowdr_config="
 
-`crowdr rmi` - removes all not otherwise used images contained in current config (supports docker options, e.g.: `crowdr rmi -f`)
+  # Wordpress MySQL database.
+  wordpress-db image mysql:5.7.10
+  wordpress-db before.run create_network
+  wordpress-db net ${net_name}
+  wordpress-db volume $(crowdr_fullname wordpress-db):/var/lib/mysql
+  wordpress-db env MYSQL_ROOT_PASSWORD=${mysql_root_password}
+  wordpress-db env MYSQL_DATABASE=${wordpress_db_name}
+  wordpress-db env MYSQL_USER=${wordpress_db_user}
+  wordpress-db env MYSQL_PASSWORD=${wordpress_db_password}
 
-`crowdr ps` - shows running containers from current config (supports docker options, e.g.: `crowdr ps -a -q`)
+  # Wordpress web application on Apache webserver.
+  wordpress-web image wordpress:4.3.1
+  wordpress-web net ${net_name}
+  wordpress-web volume $(crowdr_fullname wordpress-web):/var/www/html
+  wordpress-web env WORDPRESS_DB_HOST=${wordpress_db_host}
+  wordpress-web env WORDPRESS_DB_NAME=${wordpress_db_name}
+  wordpress-web env WORDPRESS_DB_USER=${wordpress_db_user}
+  wordpress-web env WORDPRESS_DB_PASSWORD=${wordpress_db_password}
+  wordpress-web publish ${wordpress_port}:80
 
-`crowdr ip` - shows IP addresses of running containers from current config
+  "
 
-`crowdr shell foo` - start bash shell inside `foo` container
+  create_network() {
+      docker network create ${net_name} &> /dev/null
+  }
+  ```
 
-`crowdr exec foo ls` - run `ls` inside `foo` container
+  The format of configuration is explained in [Configuration](#configuration) section.
 
-`echo 111 | crowdr pipe foo tr 1 2` - pipe data to `tr 1 2` command inside `foo` container
+3. Create and run all containers with `crowdr run`.
 
-`crowdr stats` - shows stats (supports docker options, e.g.: `crowdr stats --no-stream`)
+4. Open your browser and go to [localhost:8080](http://localhost:8080/) to check if it works.
+
+5. Stop containers with `crowdr stop`.
+
+6. Start containers again with `crowdr start`.
+
+7. Check other [commands](#commands)
+
+# Configuration
+
+Crowdr configuration file is bash script. Crowdr require to provide three variables:
+
+- crowdr_project - name which is typically used as prefix for name of every container
+- crowdr_config - configuration of containers
+- crowdr_name_format - printf format used to combine ${crowdr_project} and container name from configuration of containers into final name of container
+
+# Commands
+
+- `crowdr version` - prints current crowdr version
+
+- `crowdr run` - (default) runs all containers
+
+- `crowdr build` - builds all images
+
+- `crowdr stop` - stops all containers (supports docker options, e.g.: `crowdr stop --time=5`)
+
+- `crowdr start` - starts all containers
+
+- `crowdr restart` - stops all containers and starts them again
+
+- `crowdr kill` - kills all containers (supports docker options, e.g.: `crowdr kill --signal="KILL"`)
+
+- `crowdr rm` - removes all stopped containers from current config (supports docker options, e.g.: `crowdr rm -f`)
+
+- `crowdr rmi` - removes all not otherwise used images contained in current config (supports docker options, e.g.: `crowdr rmi -f`)
+
+- `crowdr ps` - shows running containers from current config (supports docker options, e.g.: `crowdr ps -a -q`)
+
+- `crowdr ip` - shows IP addresses of running containers from current config
+
+- `crowdr shell foo` - start bash shell inside `foo` container
+
+- `crowdr exec foo ls` - run `ls` inside `foo` container
+
+- `echo 111 | crowdr pipe foo tr 1 2` - pipe data to `tr 1 2` command inside `foo` container
+
+- `crowdr stats` - shows stats (supports docker options, e.g.: `crowdr stats --no-stream`)
 
 ## Configuration
 
