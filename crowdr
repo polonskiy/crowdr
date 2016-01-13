@@ -223,9 +223,10 @@ crowdr_parse_cfg() {
 }
 
 usage() {
-  echo -e "Usage: "
-  grep '^crowdr_command_*' $0 | sed 's/crowdr_command_/  crowdr /g;s/().*/   /g;' | grep -v cmd 
-  echo -e "\nCrowdr v$(crowdr_command_version) (docs @ https://github.com/polonskiy/crowdr)\n"
+    echo "Usage:"
+    sed -ne 's/^crowdr_command_\(.\+\)().*/  crowdr \1/p' $0
+    echo
+    echo "Crowdr v$(crowdr_command_version) (docs @ https://github.com/polonskiy/crowdr)"
 }
 
 [[ ! -n $1 ]] && { usage && exit ; }
