@@ -230,7 +230,10 @@ usage() {
     echo "Crowdr v$(crowdr_command_version) (docs @ https://github.com/polonskiy/crowdr)"
 }
 
-[[ ! -n $1 ]] && { usage && exit ; }
+if ((!$#)); then
+    usage
+    exit 1
+fi
 cmd="$1"
 shift
 if [[ "$cmd" != "version" ]]; then
