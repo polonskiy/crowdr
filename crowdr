@@ -39,8 +39,9 @@ crowdr_fullname() {
 crowdr_run_hook(){
     local container="$1"
     local hook="$2"
-    [[ -n $CROWDR_DRY ]] && echo ${opts_hook["${container}~$hook"]} && return 0
-    [[ -n ${crowdr_opts_hook["${container}~$hook"]} ]] && ${crowdr_opts_hook["${container}~$hook"]}
+    if [[ -n ${crowdr_opts_hook["${container}~$hook"]} ]]; then
+        $crowdr_debug ${crowdr_opts_hook["${container}~$hook"]}
+    fi
 }
 
 crowdr_command_version() {
