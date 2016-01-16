@@ -194,7 +194,7 @@ create_volume() {
 wait_port() {
     ip=$(docker inspect --format '{{.NetworkSettings.IPAddress}}' $(crowdr_fullname $1))
     echo "Waiting for $1"
-    while ! nc -q 1 $ip $2 </dev/null >/dev/null; do
+    while ! nc -q 1 $ip $2 </dev/null &>/dev/null; do
         echo -n .
         sleep 1;
     done

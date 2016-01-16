@@ -8,6 +8,7 @@ if [[ ! -n "$CROWDR_CFG" ]]; then
         CROWDR_CFG="crowdr.cfg.sh"
     fi
 fi
+crowdr_version="0.11.0"
 crowdr_dir="$(dirname $CROWDR_CFG)"
 crowdr_hookdir="$crowdr_dir/hooks"
 if [[ -n "$CROWDR_DRY" ]]; then
@@ -38,11 +39,13 @@ crowdr_fullname() {
 crowdr_run_hook(){
     local container="$1"
     local hook="$2"
-    [[ -n ${crowdr_opts_hook["${container}~$hook"]} ]] && ${crowdr_opts_hook["${container}~$hook"]}
+    if [[ -n ${crowdr_opts_hook["${container}~$hook"]} ]]; then
+        $crowdr_debug ${crowdr_opts_hook["${container}~$hook"]}
+    fi
 }
 
 crowdr_command_version() {
-    echo "0.11.0"
+    echo "$crowdr_version"
 }
 
 crowdr_command_build() {
@@ -220,7 +223,18 @@ crowdr_parse_cfg() {
     crowdr_full_reversed=$(tac <<< "$crowdr_full_ordered")
 }
 
-cmd="${1:-run}"
+usage() {
+    echo "Usage:"
+    sed -ne 's/^crowdr_command_\(.\+\)().*/  crowdr \1/p' $0
+    echo
+    echo "Crowdr v$(crowdr_command_version) (docs @ https://github.com/polonskiy/crowdr)"
+}
+
+if ((!$#)); then
+    usage
+    exit 1
+fi
+cmd="$1"
 shift
 if [[ "$cmd" != "version" ]]; then
     crowdr_parse_cfg
