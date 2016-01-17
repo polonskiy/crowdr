@@ -3,9 +3,13 @@
 |
 <b><a href="#installation">Installation</a></b>
 |
-<b><a href="#quickstart">Quick-start guide</a></b>
+<b><a href="#quick-start-guide">Quick-start guide</a></b>
 |
 <b><a href="#configuration">Configuration</a></b>
+|
+<b><a href="#commands">Commands</a></b>
+|
+<b><a href="#hooks">Hooks</a></b>
 </p>
 
 <br>
@@ -13,17 +17,17 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/polonskiy/crowdr/blob/master/LICENSE)
 [![Current Version](https://img.shields.io/badge/version-0.10.1-green.svg)](https://github.com/polonskiy/crowdr)
 
-Extremely flexible tool for managing multiple docker containers.
+Extremely flexible tool for managing groups of docker containers.
 
 # Features
 
-- Provide commands which operates on collection of containers.
+- Provides commands which operate on collection of containers.
 - Uses predefined description of containers from readable configuration file.
 - Can use any `docker run` option that is provided by your docker version.
 - The order of starting containers is defined in configuration file.
 - The order of stopping containers is the reverse of the order of starting.
-- Easy to install, it's just bash script.
-- Allow to use bash functions (or external scripts) as container hooks for many crowdr commands.
+- Easy to install, it's just bash script. It doesn't require any execution environment or other libraries.
+- Allows to use bash functions (or external scripts) as hooks for many crowdr commands.
 
 # Installation
 
@@ -34,20 +38,26 @@ Become root (for example with `sudo -i`) and execute:
 # curl -s https://raw.githubusercontent.com/polonskiy/crowdr/master/completion > /etc/bash_completion.d/crowdr
 ```
 
+Yes, that's all. No need for additional libraries or execution environments.
+
 # Quick-start guide
+
+Crowdr can be used both with the newest features of docker 1.9 (like [named values](https://docs.docker.com/engine/userguide/dockervolumes/#mount-a-host-directory-as-a-data-volume) and [user-defined networks](https://docs.docker.com/engine/userguide/networking/dockernetworks/#user-defined-networks)) as with the older version of docker.  
+
+### Docker 1.9 example
 
 The following example runs simple but complete [Wordpress](https://wordpress.org/) installation on Docker which contains:
 - user defined network `example01` used by all containers,
-- Docker container for Wordpress MySQL database `example01-wordpress-db`,
-- Docker named volume `example01-wordpress-db` for Wordpress database data,
-- Docker container for Apache server which runs Wordpress web application `example01-wordpress-web`,
-- Docker named volume `example01-wordpress-web` for Wordpress html data.
+- container for Wordpress MySQL database `example01-wordpress-db`,
+- named volume `example01-wordpress-db` for Wordpress database data,
+- container for Apache server which runs Wordpress web application `example01-wordpress-web`,
+- named volume `example01-wordpress-web` for Wordpress html data.
 
-It uses only official docker containers, so it can be used easily and without fear to play with crowdr.
+It uses only official docker containers, so it can be used easily to play with crowdr.
 
 1. Create empty directory and cd into it.
 
-2. Create crowdr.cfg.sh file (crowdr configuration file) with following content.
+2. Create `crowdr.cfg.sh` file (crowdr configuration file) with following content.
 
   ```sh
   #!/bin/bash
@@ -92,9 +102,11 @@ It uses only official docker containers, so it can be used easily and without fe
   }
   ```
 
-  The format of configuration is explained in [Configuration](#configuration) section.
+  > NOTE: Please replace the passwords with stronger ones if you are going to use this example for something more serious than exploration of crowdr capabilities.
 
-3. Create and run all containers with `crowdr run`.
+  The format of configuration file is explained in [Configuration](#configuration) section.
+
+3. Create and start all containers with `crowdr run`.
 
 4. Open your browser and go to [localhost:8080](http://localhost:8080/) to check if it works.
 
@@ -102,177 +114,196 @@ It uses only official docker containers, so it can be used easily and without fe
 
 6. Start containers again with `crowdr start`.
 
-7. Check other [commands](#commands)
+7. Check other [commands](#commands).
+
+8. If you want to remove this example entirely from your host OS, execute:
+
+  - `crowdr stop` - to stop all containers used in this example
+  - `crowdr rm` - to remove all containers used in this example
+  - `crowdr rmi` - to remove all images used by this example
+  - `docker volume rm example01-wordpress-db` - to remove named volume with database data
+  - `docker volume rm example01-wordpress-web` - to remove named volume with Wordpress html data
+  - `docker network rm example01` - to remove user defined network
+
+### Docker <1.9 example
+
+Comming soon...
 
 # Configuration
 
+### Format of configuration file
+
 Crowdr configuration file is bash script. Crowdr require to provide three variables:
 
-- crowdr_project - name which is typically used as prefix for name of every container
-- crowdr_config - configuration of containers
-- crowdr_name_format - printf format used to combine ${crowdr_project} and container name from configuration of containers into final name of container
+- `crowdr_project` - name which is typically used as prefix for name of every container
+- `crowdr_name_format` - printf format used to combine ${crowdr_project} and container name from ${crowdr_config} into final name of container
+- `crowdr_config` - configuration of containers
+
+The `crowdr_config` value is multi-line string. Blank lines and lines starting with `#` are ignored. Every other lines should have following format:
+
+`container_name option_name option_value`
+
+where:
+
+- `container_name` is arbitrary name of container
+
+  Note that final name of container is determined by crowdr using `crowdr_name_format` as combination of container name and value of `crowdr_project`.
+
+- `option_name` is name of [crowdr option](#crowdr-options) or run option.
+
+  Values of options `image`, `command`, `build`, `after.*` `before.*` are [crowdr option](#crowdr-options) used by various crowdr commands. All other values are run options, they are not interpreted in any way but are blindly passed to `docker run`. Please consult the [Docker run reference](https://docs.docker.com/engine/reference/run/) to know what can be used as run option.
+
+- `option_value` is the value of option
+
+As an example consider following crowdr configuration:
+
+```sh
+#!/bin/bash
+
+crowdr_project="example02"
+crowdr_name_format="%s-%s"
+
+crowdr_config="
+postgresql image postgres:9.4.5
+postgresql env POSTGRES_PASSWORD=secret-pass
+postgresql volume $(crowdr_fullname postgresql-data):/var/lib/postgresql/data
+"
+```
+
+After executing `crowdr run` the following command will be run:
+
+```sh
+docker run -td \
+           --name   example02-postgresql \
+           --env    POSTGRES_PASSWORD=secretpass \
+           --volume postgresql-data:/var/lib/postgresql/data \       
+           postgres:9.4.5
+```
+
+### Location and name of configuration file
+
+- If `CROWDR_CFG` variable was exported before running crowdr then the value of this variable will be used as filename of crowdr configuration.
+- Otherwise if the current directory contains `.crowdr` folder then `.crowdr/config.sh` is used as configuration file.
+- Otherwise `crowdr.cfg.sh` from current directory is used.
+
+### Crowdr options
+
+- `build`
+
+  Path to a directory containing a Dockerfile. This path is used during execution of `crowdr build`.
+
+- `image`
+
+  This is image name crowdr use to create container. If it is not provided then container name is used as image name.
+
+- `command`
+
+  Value of this option overrides CMD from Dockerfile/image.
+
+- `before.*` and `after.*` (container hooks)
+
+  Name of hook bash function runned before/after execution of specified command for given container. Container hooks can be used for following crowdr commands: run, build, start, stop, kill, rm and rmi.
+
+  In the below example, after starting redis container, crowdr waits for opening 6379 port.
+
+  ```sh
+  #!/bin/bash
+
+  crowdr_project="example03"
+  crowdr_name_format="%s_%s"
+
+  redis image redis:3.0.6
+  redis after.start wait_port redis 6379
+
+  wait_port() {
+      ip=$(docker inspect --format '{{.NetworkSettings.IPAddress}}' $(crowdr_fullname $1))
+      echo "Waiting for $1"
+      while ! nc -q 1 $ip $2 </dev/null &>/dev/null; do
+          echo -n .
+          sleep 1;
+      done
+      echo
+  }
+  ```
 
 # Commands
 
-- `crowdr version` - prints current crowdr version
+The commands operates only on containers and images specified in configuration.
 
-- `crowdr run` - (default) runs all containers
+- `crowdr run`
+
+  Creates and starts all containers. They are started in the order specified in configuration file.
+
+  > NOTE: If any of the containers already exist then they are removed with --force option.
+
+- `crowdr start`
+
+  Starts all containers. They are started in the order specified in configuration file.
+
+- `crowdr stop`
+
+  Stops all containers. They are stopped in the order reversed to specified in configuration file. Command supports docker options, e.g.: `crowdr stop --time=5`).
+
+- `crowdr restart`
+
+  Executes `crowdr stop` and then `crowdr start`.
+
+- `crowdr ps`
+
+  Shows running containers (supports docker options, e.g.: `crowdr ps -a -q`).
+
+- `crowdr ip`
+
+  Shows IP addresses of running containers.
+
+- `crowdr stats`
+
+  Shows stats (supports docker options, e.g.: `crowdr stats --no-stream`).
+
+- `crowdr shell foo`
+
+  Starts bash shell inside `foo` container.
 
 - `crowdr build` - builds all images
 
-- `crowdr stop` - stops all containers (supports docker options, e.g.: `crowdr stop --time=5`)
+  Builds all containers which have specified dockerfile path with `build` crowdr option.
 
-- `crowdr start` - starts all containers
+- `crowdr kill`
 
-- `crowdr restart` - stops all containers and starts them again
+  Kills all containers (supports docker options, e.g.: `crowdr kill --signal="KILL"`)
 
-- `crowdr kill` - kills all containers (supports docker options, e.g.: `crowdr kill --signal="KILL"`)
+- `crowdr rm`
 
-- `crowdr rm` - removes all stopped containers from current config (supports docker options, e.g.: `crowdr rm -f`)
+  Removes all containers (supports docker options, e.g.: `crowdr rm -f`).
 
-- `crowdr rmi` - removes all not otherwise used images contained in current config (supports docker options, e.g.: `crowdr rmi -f`)
+- `crowdr rmi`
 
-- `crowdr ps` - shows running containers from current config (supports docker options, e.g.: `crowdr ps -a -q`)
+  Removes all not used images (supports docker options, e.g.: `crowdr rmi -f`).
 
-- `crowdr ip` - shows IP addresses of running containers from current config
+- `crowdr exec foo ls`
 
-- `crowdr shell foo` - start bash shell inside `foo` container
+  Runs `ls` inside `foo` container.
 
-- `crowdr exec foo ls` - run `ls` inside `foo` container
+- `echo 111 | crowdr pipe foo tr 1 2`
 
-- `echo 111 | crowdr pipe foo tr 1 2` - pipe data to `tr 1 2` command inside `foo` container
+  Pipe data to `tr 1 2` command inside `foo` container
 
-- `crowdr stats` - shows stats (supports docker options, e.g.: `crowdr stats --no-stream`)
+- `crowdr version`
 
-## Configuration
+  Prints current crowdr version.
 
-* crowdr sources `.crowdr/config.sh`
-* blank lines and lines starting with `#` are ignored.
-* you can override config filename using `CROWDR_CFG` variable (`CROWDR_CFG=~/foo/bar/baz.sh crowdr`)
-* you can enable debug mode using `CROWDR_TRACE` variable (`CROWDR_TRACE=1 crowdr |& less`)
-* review planned commands without executing them using `CROWDR_DRY` variable (`CROWDR_DRY=1 crowdr |& less`)
-* containers run in the order as in config, stop in reversed
+> To enable debug mode set `CROWDR_TRACE` variable.
+>
+> ```sh
+> CROWDR_TRACE=1 crowdr run |& less
+> ```
+>
+> To review planned commands without executing them set `CROWDR_DRY` variable.
+> ``` sh
+> CROWDR_DRY=1 crowdr |& less
+> ```
 
-Sample `.crowdr/config.sh`:
-```bash
-#!/bin/bash
-
-crowdr_project="example"
-crowdr_name_format="%s_%s"
-
-crowdr_config="
-database env DB_NAME=gitlabhq_production
-database env DB_USER=gitlab
-database env DB_PASS=password
-database volume $(crowdr_fullname database):/var/lib/postgresql
-database image sameersbn/postgresql:9.4-11
-database before.run create_volume database
-database after.start wait_port database 5432
-
-redis volume $(crowdr_fullname redis):/var/lib/redis
-redis image sameersbn/redis:latest
-redis before.run create_volume redis
-redis after.start wait_port redis 6379
-
-gitlab before.run create_volume gitlab
-gitlab after.start wait_gitlab
-gitlab link database:postgresql
-gitlab link redis:redisio
-gitlab publish 10022:22
-gitlab publish 10080:80
-gitlab env GITLAB_PORT=10080
-gitlab env GITLAB_SSH_PORT=10022
-gitlab env GITLAB_SECRETS_DB_KEY_BASE=long-and-random-alpha-numeric-string
-gitlab volume $(crowdr_fullname gitlab):/home/git/data
-gitlab image sameersbn/gitlab:8.3.2
-"
-
-create_volume() {
-    docker volume create --name=$(crowdr_fullname $1) > /dev/null
-}
-
-wait_port() {
-    ip=$(docker inspect --format '{{.NetworkSettings.IPAddress}}' $(crowdr_fullname $1))
-    echo "Waiting for $1"
-    while ! nc -q 1 $ip $2 </dev/null &>/dev/null; do
-        echo -n .
-        sleep 1;
-    done
-    echo
-}
-
-wait_gitlab() {
-    echo "Waiting for gitlab"
-    while ! curl -ILs http://localhost:10080 | grep -q '200 OK'; do
-        echo -n .
-        sleep 1;
-    done
-    echo
-    xdg-open http://localhost:10080
-}
-```
-
-Benefits:
-* bash support :trollface:
-* full `docker run` options support
-
-### `project` option (global)
-
-```
-global project myproject
-```
-
-Global option for name of project. All container names will be silently prefixed with this name and separator char. If it is not set current directory name used.
-
-### `project_sep` option (global)
-
-```
-global project_sep "_"
-```
-
-Separator string used after project name. If it is not set `_` is used.
-
-For example for following configuration all containers will be prefixed with `myproj-`
-
-```
-global project myproj
-global project_sep "-"
-```
-
-### `build` option
-
-`build` - path to a directory containing a Dockerfile
-
-```
-container_name build some/path
-```
-
-### `image` option
-
-`image` - image name. If image doesn't exists docker will try to download it.
-
-```
-container_name image ubuntu:14.04
-```
-
-### `command` option
-
-`command` - overrides `CMD` from Dockerfile/image
-
-```
-container_name command tail -f /dev/null
-```
-
-### Run options
-
-Format is following
-```
-container_name option value
-```
-
-[Full reference](https://docs.docker.com/reference/commandline/cli/#run)
-
-### Hooks
+# Hooks
 
 Every crowdr command can be extended.
 Lets say you want to pull in some Dockerfiles from remote repositories *before* running `crowdr build`.
@@ -285,4 +316,6 @@ Lets say you want to pull in some Dockerfiles from remote repositories *before* 
     $ crowdr build
     pulling repos
 
-Crowdr detects both `.before` and `.after`-hooks of each crowdr command.
+Crowdr detects both `.before` and `.after` hooks of each crowdr command.
+
+Crowdr supports also hooks executed only for specified containers. See `before.*` and `after.*` in [crowdr options](#crowdr-options).
