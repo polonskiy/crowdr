@@ -42,7 +42,7 @@ Yes, that's all. No need for additional libraries or execution environments.
 
 # Quick-start guide
 
-Crowdr can be used both with the newest features of docker 1.9 (like [named values](https://docs.docker.com/engine/userguide/dockervolumes/#mount-a-host-directory-as-a-data-volume) and [user-defined networks](https://docs.docker.com/engine/userguide/networking/dockernetworks/#user-defined-networks)) as with the older version of docker.  
+Crowdr can be used both with the newest features of docker 1.9 (like [named values](https://docs.docker.com/engine/userguide/dockervolumes/#mount-a-host-directory-as-a-data-volume) and [user-defined networks](https://docs.docker.com/engine/userguide/networking/dockernetworks/#user-defined-networks)) as with the older version of docker.
 
 ### Docker 1.9 example
 
@@ -176,7 +176,7 @@ After executing `crowdr run` the following command will be run:
 docker run -td \
            --name   example02-postgresql \
            --env    POSTGRES_PASSWORD=secretpass \
-           --volume postgresql-data:/var/lib/postgresql/data \       
+           --volume postgresql-data:/var/lib/postgresql/data \
            postgres:9.4.5
 ```
 
