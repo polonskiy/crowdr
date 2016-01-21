@@ -42,9 +42,7 @@ Yes, that's all. No need for additional libraries or execution environments.
 
 # Quick-start guide
 
-Crowdr can be used both with the newest features of docker 1.9 (like [named values](https://docs.docker.com/engine/userguide/dockervolumes/#mount-a-host-directory-as-a-data-volume) and [user-defined networks](https://docs.docker.com/engine/userguide/networking/dockernetworks/#user-defined-networks)) as with the older version of docker.
-
-### Docker 1.9 example
+### Example
 
 The following example runs simple but complete [Wordpress](https://wordpress.org/) installation on Docker which contains:
 - user defined network `example01` used by all containers,
@@ -124,10 +122,6 @@ It uses only official docker containers, so it can be used easily to play with c
   - `docker volume rm example01-wordpress-db` - to remove named volume with database data
   - `docker volume rm example01-wordpress-web` - to remove named volume with Wordpress html data
   - `docker network rm example01` - to remove user defined network
-
-### Docker <1.9 example
-
-Comming soon...
 
 # Configuration
 
