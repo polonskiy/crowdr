@@ -1,23 +1,18 @@
-<p align="center">
-<b><a href="#features">Features</a></b>
-|
-<b><a href="#installation">Installation</a></b>
-|
-<b><a href="#quick-start-guide">Quick-start guide</a></b>
-|
-<b><a href="#configuration">Configuration</a></b>
-|
-<b><a href="#commands">Commands</a></b>
-|
-<b><a href="#hooks">Hooks</a></b>
-</p>
-
-<br>
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/polonskiy/crowdr/blob/master/LICENSE)
-[![Current Version](https://img.shields.io/badge/version-0.10.1-green.svg)](https://github.com/polonskiy/crowdr)
+# Crowdr [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/polonskiy/crowdr/blob/master/LICENSE) [![Current Version](https://img.shields.io/badge/version-0.11.0-green.svg)](https://github.com/polonskiy/crowdr)
 
 Extremely flexible tool for managing groups of docker containers.
+
+[Features](#features)
+
+[Installation](#installation)
+
+[Quick-start guide](#quick-start-guide)
+
+[Configuration](#configuration)
+
+[Commands](#commands)
+
+[Hooks](#hooks)
 
 # Features
 
