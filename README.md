@@ -298,13 +298,13 @@ Every crowdr command can be extended.
 Lets say you want to pull in some Dockerfiles from remote repositories *before* running `crowdr build`.
 
     $ mkdir .crowdr/hooks
-    $ echo 'echo pulling repos' > .crowdr/hooks/build.before
-    $ echo 'git clone http://github.com/someuser/docker.redis' >> .crowdr/hooks/build.before
-    $ echo 'git clone http://github.com/someuser/docker.proxy' >> .crowdr/hooks/build.before
+    $ echo 'echo pulling repos' > .crowdr/hooks/before.build
+    $ echo 'git clone http://github.com/someuser/docker.redis' >> .crowdr/hooks/before.build
+    $ echo 'git clone http://github.com/someuser/docker.proxy' >> .crowdr/hooks/before.build
     $ chmod 755 .crowdr/hooks/*
     $ crowdr build
     pulling repos
 
-Crowdr detects both `.before` and `.after` hooks of each crowdr command.
+Crowdr detects both `before.*` and `after.*` hooks of each crowdr command.
 
 Crowdr supports also hooks executed only for specified containers. See `before.*` and `after.*` in [crowdr options](#crowdr-options).
