@@ -239,7 +239,7 @@ shift
 if [[ "$cmd" != "version" ]]; then
     crowdr_parse_cfg
 fi
-[[ -x $crowdr_hookdir/before.$cmd ]] && $crowdr_hook_exec $crowdr_hookdir/before.$cmd
+[[ -f $crowdr_hookdir/before.$cmd ]] && $crowdr_hook_exec $crowdr_hookdir/before.$cmd
 crowdr_command_$cmd "$@"
-[[ -x $crowdr_hookdir/after.$cmd  ]] && $crowdr_hook_exec $crowdr_hookdir/after.$cmd
+[[ -f $crowdr_hookdir/after.$cmd  ]] && $crowdr_hook_exec $crowdr_hookdir/after.$cmd
 exit 0
