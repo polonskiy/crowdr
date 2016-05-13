@@ -226,6 +226,7 @@ crowdr_parse_cfg() {
 usage() {
     echo "Usage:"
     sed -ne 's/^crowdr_command_\(.\+\)().*/  crowdr \1/p' $0
+    [[ -d $crowdr_hookdir ]] && find $crowdr_hookdir -type f -executable | sed 's/.*\//  crowdr /g'
     echo
     echo "Crowdr v$(crowdr_command_version) (docs @ https://github.com/polonskiy/crowdr)"
 }
@@ -240,6 +241,10 @@ if [[ "$cmd" != "version" ]]; then
     crowdr_parse_cfg
 fi
 [[ -f $crowdr_hookdir/before.$cmd ]] && $crowdr_hook_exec $crowdr_hookdir/before.$cmd
-crowdr_command_$cmd "$@"
+if [[ -f $crowdr_hookdir/$cmd ]]; then 
+  $crowdr_hook_exec $crowdr_hookdir/$cmd 
+else
+  crowdr_command_$cmd "$@"
+fi
 [[ -f $crowdr_hookdir/after.$cmd  ]] && $crowdr_hook_exec $crowdr_hookdir/after.$cmd
 exit 0

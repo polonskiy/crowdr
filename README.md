@@ -292,7 +292,7 @@ The commands operates only on containers and images specified in configuration.
 > CROWDR_DRY=1 crowdr |& less
 > ```
 
-# Hooks
+# Hooks & Aliases
 
 Every crowdr command can be extended.
 Lets say you want to pull in some Dockerfiles from remote repositories *before* running `crowdr build`.
@@ -308,3 +308,18 @@ Lets say you want to pull in some Dockerfiles from remote repositories *before* 
 Crowdr detects both `before.*` and `after.*` hooks of each crowdr command.
 
 Crowdr supports also hooks executed only for specified containers. See `before.*` and `after.*` in [crowdr options](#crowdr-options).
+
+Aliases are also supported in a similar way, to easily automate manual docker plumbing:
+
+    $ mkdir .crowdr/hooks
+    $ echo 'docker kill $(crowdr_fullname mycontainer)' > .crowdr/hooks/cleanup
+    $ chmod 755 .crowdr/hooks/cleanup
+    $ ./crowdr
+    Usage:
+      crowdr rm
+      crowdr rmi
+      ...
+      crowdr cleanup                      <--- your alias
+
+    $ ./crowdr cleanup
+
