@@ -225,21 +225,25 @@ crowdr_parse_cfg() {
 
 usage() {
     echo "Usage:"
-    sed -ne 's/^crowdr_command_\(.\+\)().*/  crowdr \1/p' $0
+    sed -ne 's/^crowdr_command_\(.\+\)().*/  crowdr \1/p' ${BASH_SOURCE-}
     echo
     echo "Crowdr v$(crowdr_command_version) (docs @ https://github.com/polonskiy/crowdr)"
 }
 
-if ((!$#)); then
-    usage
-    exit 1
-fi
-cmd="$1"
-shift
-if [[ "$cmd" != "version" ]]; then
-    crowdr_parse_cfg
-fi
-[[ -f $crowdr_hookdir/before.$cmd ]] && $crowdr_hook_exec $crowdr_hookdir/before.$cmd
-crowdr_command_$cmd "$@"
-[[ -f $crowdr_hookdir/after.$cmd  ]] && $crowdr_hook_exec $crowdr_hookdir/after.$cmd
-exit 0
+crowdr_main() {
+    if ((!$#)); then
+        usage
+        exit 1
+    fi
+    cmd="$1"
+    shift
+    if [[ "$cmd" != "version" ]]; then
+        crowdr_parse_cfg
+    fi
+    [[ -f $crowdr_hookdir/before.$cmd ]] && $crowdr_hook_exec $crowdr_hookdir/before.$cmd
+    crowdr_command_$cmd "$@"
+    [[ -f $crowdr_hookdir/after.$cmd  ]] && $crowdr_hook_exec $crowdr_hookdir/after.$cmd
+    exit 0
+}
+
+if [[ $0 == "${BASH_SOURCE-}" ]]; then crowdr_main "$@"; exit; fi
